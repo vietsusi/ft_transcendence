@@ -9,7 +9,7 @@ docker-compose version
 
 # Running Command
 # Build
-docker compose -f ./docker-compose.yml up -d --build
+docker-compose -f ./docker-compose.yml up -d --build
 
 # Remove
 docker compose -f ./docker-compose.yml down
