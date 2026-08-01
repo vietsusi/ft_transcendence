@@ -1,0 +1,15 @@
+services:
+  # Frontend service
+  frontend:
+    build: ./frontend
+    container_name: transcendence_frontend
+    ports:
+     - "5173:5173"
+    environment:
+     - VITE_API_URL=http://localhost:5000/api
+    volumes:
+     - ./frontend:/app
+     - /app/node_modules
+    stdin_open: true
+    tty: true
+    command: npm run dev -- --host 0.0.0.0
