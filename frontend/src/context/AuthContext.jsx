@@ -3,7 +3,7 @@ import axios from 'axios'
 
 // ===== CONFIGURATION =====
 // Set to false when backend is ready
-const USE_MOCK_API = true  // ← Change to false when connecting to real backend
+const USE_MOCK_API = false // ← Change to false when connecting to real backend
 
 // ===== CREATE AXIOS INSTANCE =====
 const api = axios.create({
