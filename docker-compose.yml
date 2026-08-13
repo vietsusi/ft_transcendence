@@ -1,15 +1,91 @@
 services:
-  # Frontend service
-  frontend:
-    build: ./frontend
-    container_name: transcendence_frontend
-    ports:
-     - "5173:5173"
+  # ==========================================
+  # POSTGRESQL DATABASE
+  # ==========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: transcendence_postgres
+    restart: unless-stopped
     environment:
-     - VITE_API_URL=http://localhost:5000/api
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: transcendence
+    ports:
+      - "5432:5432"
     volumes:
-     - ./frontend:/app
-     - /app/node_modules
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - transcendence_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d transcendence"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # BACKEND - NestJS
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: transcendence_backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/transcendence?schema=public
+      - JWT_SECRET=supersecretkey123
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "
+        npx prisma generate &&
+        npx prisma migrate deploy &&
+        npm run start:dev
+      "
+    networks:
+      - transcendence_network
+
+  # ==========================================
+  # FRONTEND - React + Vite
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: transcendence_frontend
+    restart: unless-stopped
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+    ports:
+      - "5174:5174"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     stdin_open: true
     tty: true
+    depends_on:
+      - backend
     command: npm run dev -- --host 0.0.0.0
+    networks:
+      - transcendence_network
+
+# ==========================================
+# VOLUMES - MUST BE DEFINED HERE
+# ==========================================
+volumes:
+  postgres_data:
+
+# ==========================================
+# NETWORKS
+# ==========================================
+networks:
+  transcendence_network:
+    driver: bridge

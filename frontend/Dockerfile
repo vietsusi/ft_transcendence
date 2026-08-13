@@ -19,8 +19,8 @@ RUN npm run build
 #Install serve
 RUN npm install -g serve
 
-#Expose port 5173
-EXPOSE 5173
+#Expose port 5174, change from 5173->5174 to match with backend
+EXPOSE 5174
 
 #start the app in the dev mode
 CMD [ "npm", "run", "dev", "--", "--host", "0.0.0.0" ]
