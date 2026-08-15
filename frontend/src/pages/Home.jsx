@@ -1,8 +1,11 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import './Home.css'
 
 function Home({ user }) {
   // Get the username from the user object
+  const navigate = useNavigate()
+
   const displayName = user?.username || user?.email || user?.name || 'User'
   
   return (
@@ -39,8 +42,8 @@ function Home({ user }) {
 
         {user && (
           <div className="user-actions">
-            <button className="action-btn">View Recommendations</button>
-            <button className="action-btn secondary">My Watchlist</button>
+            <button className="action-btn" onClick={() => navigate('/recommendations')}>View Recommendations</button>
+            <button className="action-btn secondary" onClick={() => navigate('/profile')}>My Watchlist</button>
           </div>
         )}
       </div>
