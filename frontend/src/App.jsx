@@ -1,4 +1,4 @@
-import React, { useState } from 'react'  // ← Changed: import useState directly
+import React, { useState } from 'react' 
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Home from './pages/Home'
@@ -8,11 +8,15 @@ import ProtectedRoute from './components/common/ProtectedRoute'
 import Profile from './pages/Profile'
 import Recommendations from './pages/Recommendations'
 import Movies from './pages/Movies'  // ← Added: for future use
-import './App.css'
+import MovieDetails from './pages/MovieDetails'      // ← Added: for future use
+import Watchlist from './pages/Watchlist'            // ← Added: for future use
+import Dashboard from './pages/Dashboard'            // ← Added: for future use
+
+// import './App.css'
 
 function App() {
   const { user, login, register, logout, isAuthenticated, loading, error } = useAuth()
-  const [isLoginOpen, setIsLoginOpen] = useState(false)  // ← Changed: removed React.
+  const [isLoginOpen, setIsLoginOpen] = useState(false) 
 
   // ===== HANDLE LOGIN =====
   const handleLogin = async (email, password) => {
@@ -50,15 +54,17 @@ function App() {
   // ===== SHOW LOADING STATE =====
   if (loading) {
     return (
-      <div className="app-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-3 text-gray-600">Loading...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="app">
+    <div className="min-h-screen bg-gray-50">
       <Navbar 
         user={user}
         isAuthenticated={isAuthenticated}
@@ -68,12 +74,14 @@ function App() {
       
       {/* ===== GLOBAL ERROR DISPLAY ===== */}
       {error && (
-        <div className="global-error">
-          <div className="global-error-content">
-            <span className="global-error-icon">⚠️</span>
-            <span className="global-error-message">{error}</span>
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <span>⚠️</span>
+              <span>{error}</span>
+            </span>
             <button 
-              className="global-error-dismiss"
+              className="text-red-700 hover:text-red-900 text-xl"
               onClick={() => setError(null)}
             >
               ×
@@ -82,12 +90,12 @@ function App() {
         </div>
       )}
       
-      <main className="main-content">
+      <main className="container mx-auto px-4 py-6">
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home user={user} />} />
           <Route path="/movies" element={<Movies />} />
-          
+          <Route path="/movies/:id" element={<MovieDetails />} />  {/* ← ADD */}
           {/* Protected Routes - Only when logged in */}
           <Route path="/profile" element={
             <ProtectedRoute>
@@ -97,6 +105,16 @@ function App() {
           <Route path="/recommendations" element={
             <ProtectedRoute>
               <Recommendations />
+            </ProtectedRoute>
+          } />
+          <Route path="/watchlist" element={
+            <ProtectedRoute>
+              <Watchlist />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
             </ProtectedRoute>
           } />
           

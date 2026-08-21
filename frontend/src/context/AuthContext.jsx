@@ -280,20 +280,28 @@ export const AuthProvider = ({ children }) => {
   }
 
   // ===== LOGOUT =====
-  const logout = async () => {
-    try {
-      if (!USE_MOCK_API) {
-        await api.post('/auth/logout')
-      }
-    } catch (error) {
-      // Ignore logout errors
-    } finally {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      setUser(null)
-      setError(null)
-    }
-  }
+  // const logout = async () => {
+  //   try {
+  //     if (!USE_MOCK_API) {
+  //       await api.post('/auth/logout')
+  //     }
+  //   } catch (error) {
+  //     // Ignore logout errors
+  //   } finally {
+  //     localStorage.removeItem('token')
+  //     localStorage.removeItem('user')
+  //     setUser(null)
+  //     setError(null)
+  //   }
+  // }
+  const logout = () => {
+  // Simply remove tokens and clear state - no API call needed for JWT
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  setUser(null)
+  setError(null)
+  console.log('🔴 User logged out')
+}
 
   // ===== UPDATE USER =====
   const updateUser = (updatedData) => {

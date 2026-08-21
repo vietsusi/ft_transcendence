@@ -1,43 +1,47 @@
 import React from 'react'
 import { useAuth } from '../context/AuthContext'
-import './Profile.css'
 
 function Profile() {
   const { user, logout } = useAuth()
 
   return (
-    <div className="profile-container">
-      <div className="profile-card">
-        <div className="profile-header">
-          <div className="profile-avatar">
-            {user?.avatar ? (
-              <img src={user.avatar} alt="Avatar" />
-            ) : (
-              <span className="avatar-placeholder">
-                {user?.username?.[0]?.toUpperCase() || 'U'}
-              </span>
-            )}
+    <div className="max-w-md mx-auto mt-10">
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-32"></div>
+        <div className="px-6 pb-6 -mt-16">
+          <div className="flex justify-center">
+            <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-300 flex items-center justify-center text-3xl font-bold text-gray-600">
+              {user?.username?.[0]?.toUpperCase() || 'U'}
+            </div>
           </div>
-          <h2>{user?.username}</h2>
-          <p>{user?.email}</p>
+          
+          <div className="text-center mt-2">
+            <h2 className="text-2xl font-bold text-gray-800">{user?.username || 'User'}</h2>
+            <p className="text-gray-600">{user?.email || 'No email'}</p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-200">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-800">0</div>
+              <div className="text-sm text-gray-500">Movies Watched</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-800">0</div>
+              <div className="text-sm text-gray-500">Reviews</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-800">0</div>
+              <div className="text-sm text-gray-500">Watchlist</div>
+            </div>
+          </div>
+
+          <button 
+            onClick={logout}
+            className="w-full mt-6 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium"
+          >
+            Sign Out
+          </button>
         </div>
-        <div className="profile-stats">
-          <div className="stat-item">
-            <span className="stat-value">0</span>
-            <span className="stat-label">Movies Watched</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">0</span>
-            <span className="stat-label">Reviews</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">0</span>
-            <span className="stat-label">Watchlist</span>
-          </div>
-        </div>
-        <button className="logout-btn-full" onClick={logout}>
-          Sign Out
-        </button>
       </div>
     </div>
   )
