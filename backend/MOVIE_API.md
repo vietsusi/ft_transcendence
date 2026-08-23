@@ -1,10 +1,39 @@
 # Movie API — Integration Guide (Person A / Lin)
 
-Base URL (local): `http://localhost:5000/api`
-Interactive docs (Swagger): `http://localhost:5000/api/docs`
+Base URL (local): `http://localhost:5001/api`
+Interactive docs (Swagger): `http://localhost:5001/api/docs`
+OpenAPI 3.0 JSON: `http://localhost:5001/api/docs-json`
 
 All list/detail/search/genre endpoints are **public (no auth)**.
 Write endpoints (POST/PUT/DELETE) require the header `x-api-key: <API_KEY>`.
+
+> The NestJS app listens on port `5000` inside the backend container. Docker Compose publishes it as port `5001` on the host because macOS may reserve port `5000` for Control Center/AirPlay.
+
+## Quick start
+
+From the repository root:
+
+```bash
+docker compose up -d --build
+docker compose ps
+```
+
+On first startup, Docker Compose creates PostgreSQL, applies all Prisma migrations, and seeds **12 genres and 24 movies/TV series**.
+
+Quick verification:
+
+```bash
+curl http://localhost:5001/api/movies
+curl "http://localhost:5001/api/movies?page=1&limit=100"
+```
+
+The default page size is 12, so the 24 seeded titles are returned across two pages unless `limit=100` is supplied.
+
+Stop the stack without deleting database data:
+
+```bash
+docker compose down
+```
 
 ---
 
@@ -105,6 +134,8 @@ Returns `{ "id": <id>, "deleted": true }`. 404 if id missing.
 - The existing `frontend/src/api/movieApi.js` calls already match these routes (`/movies`, `/movies/:id`, `/movies/search`, `/genres`).
 - List/search responses are `{ items, pagination }` — read `res.data.items` for the grid and `res.data.pagination` for paging controls.
 - Genre dropdown: `GET /genres`.
+- Docker Compose injects `VITE_API_URL=http://localhost:5001/api` into the Vite dev server.
+- `frontend/src/pages/Movies.jsx` is currently a placeholder and does not call `movieApi.getMovies()` yet. The API and seed data are ready, but the frontend still needs movie cards, loading/error states, search/filter controls, and pagination.
 
 ## Rate limiting & errors
 - Global rate limit: **100 requests / 60s per IP** (429 on exceed).
@@ -112,5 +143,7 @@ Returns `{ "id": <id>, "deleted": true }`. 404 if id missing.
 - Missing/invalid API key on write endpoints returns **401**.
 
 ## Notes
-- API key for local Docker is set in `docker-compose.yml` (`API_KEY`). Send it as the `x-api-key` header.
+- Local Docker defaults `API_KEY` to `change_me_api_key`. Send it as the `x-api-key` header for write endpoints.
+- `DATABASE_URL`, `JWT_SECRET`, `API_KEY`, and `FRONTEND_URL` can be overridden through shell or `.env` variables before running Docker Compose.
+- The OpenAPI JSON endpoint can be imported into Postman, Insomnia, Bruno, or rendered with ReDoc.
 - Movie/TV are one table distinguished by `type` (`MOVIE` / `TV_SERIES`).
