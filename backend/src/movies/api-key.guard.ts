@@ -1,0 +1,20 @@
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+
+// Protects public write endpoints with a shared API key sent as the x-api-key header.
+@Injectable()
+export class ApiKeyGuard implements CanActivate {
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest();
+    const apiKey = request.headers['x-api-key'];
+    const expected = process.env.API_KEY;
+    if (!expected || apiKey !== expected) {
+      throw new UnauthorizedException('Invalid or missing API key');
+    }
+    return true;
+  }
+}

@@ -1,8 +1,47 @@
 services:
+  # PostgreSQL database
+  db:
+    image: postgres:16
+    container_name: transcendence_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: transcendence
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d transcendence"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Backend service (NestJS + Prisma)
+  backend:
+    build: ./backend
+    container_name: transcendence_backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/transcendence
+      JWT_SECRET: change_me_in_prod
+      API_KEY: change_me_api_key
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: sh -c "npx prisma migrate deploy && npx prisma db seed && npm run start:dev"
+
   # Frontend service
   frontend:
     build: ./frontend
     container_name: transcendence_frontend
+    depends_on:
+      - backend
     ports:
      - "5173:5173"
     environment:
@@ -13,3 +52,6 @@ services:
     stdin_open: true
     tty: true
     command: npm run dev -- --host 0.0.0.0
+
+volumes:
+  db_data:
