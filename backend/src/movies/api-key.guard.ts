@@ -10,9 +10,10 @@ import {
 export class ApiKeyGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
-    const apiKey = request.headers['x-api-key'];
+    const header = request.headers['x-api-key'];
+    const apiKey = Array.isArray(header) ? header[0] : header;
     const expected = process.env.API_KEY;
-    if (!expected || apiKey !== expected) {
+    if (!expected || !apiKey || apiKey !== expected) {
       throw new UnauthorizedException('Invalid or missing API key');
     }
     return true;
