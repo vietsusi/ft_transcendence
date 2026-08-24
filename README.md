@@ -30,7 +30,7 @@ ft_transcendence/
 ├── backend/          # NestJS API
 ├── frontend/         # React + Vite
 ├── docker-compose.yml
-├── Setup.md          # Detailed setup guide
+├── SetUp.md          # Detailed setup guide
 └── README.md
 ```
 
