@@ -47,7 +47,7 @@ function Home({ user }) {
             </button>
             <button 
               className="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold"
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate('/watchlist')}
             >
               My Watchlist
             </button>
