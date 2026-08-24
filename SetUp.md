@@ -8,7 +8,7 @@ Run in terminal:
 docker --version
 docker-compose version
 
-If not have docker please install
+If you don't have Docker installed, please install it:
 1.1 Linux:
     sudo apt-get update
     sudo apt-get install docker-compose
