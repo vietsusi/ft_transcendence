@@ -30,7 +30,7 @@ function Dashboard() {
           favoriteGenres: ['Sci-Fi', 'Action', 'Drama'],
           recentActivity: [
             { type: 'watched', movie: 'Viet Frontend Demo', date: '2 days ago' },
-            { type: 'reviewed', movie: 'Transcendance Demon', date: '3 days ago' },
+            { type: 'reviewed', movie: 'Transcendance Demo', date: '3 days ago' },
             { type: 'watchlist', movie: 'Another Film', date: '1 week ago' },
           ]
         })
