@@ -135,8 +135,8 @@ Expected output:
   ➜  Network: http://172.19.0.4:5174/
   ➜  press h + enter to show help
 
-4.3 Test Backennd
-4.3.1 .Test Backend API:
+4.3 Test Backend
+4.3.1 Test Backend API:
 curl http://localhost:5000/api
 Expected output: Hello World!%   
 
