@@ -82,7 +82,7 @@ function App() {
             </span>
             <button 
               className="text-red-700 hover:text-red-900 text-xl"
-              onClick={() => setError(null)}
+              onClick={() => {}}
             >
               ×
             </button>
