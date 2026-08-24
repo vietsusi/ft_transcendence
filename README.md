@@ -55,6 +55,6 @@ Jasmin	Chatbox
 
 ## 📚 Documentation
 ```bash
-Setup Guide: Setup.md
-Authentication Flow: Authentication_Flow_Diagram.md
+Setup Guide: SetUp.md
+Architecture Diagram: Architecture_Diagram.md
 ```
