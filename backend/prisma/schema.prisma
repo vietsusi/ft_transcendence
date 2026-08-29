@@ -13,3 +13,31 @@ model User {
   email    String @unique
   password String
 }
+
+enum MovieType {
+  MOVIE
+  TV_SERIES
+}
+
+model Genre {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  movies Movie[] @relation("MovieGenres")
+}
+
+model Movie {
+  id            Int       @id @default(autoincrement())
+  title         String
+  description   String
+  type          MovieType @default(MOVIE)
+  releaseYear   Int
+  posterUrl     String?
+  averageRating Float     @default(0)
+  genres        Genre[]   @relation("MovieGenres")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([type])
+  @@index([releaseYear])
+  @@index([averageRating])
+}
