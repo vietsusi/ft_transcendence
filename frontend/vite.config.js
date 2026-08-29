@@ -5,8 +5,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true,
-    port: 5174,  // ← Change to a different port
-    strictPort: false,  // ← Allow fallback if port is taken
+    port: 5173,
+    strictPort: true,
     watch: {
       usePolling: true
     }
