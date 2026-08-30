@@ -7,7 +7,7 @@ const USE_MOCK_API = false // ← Change to false when connecting to real backen
 
 // ===== CREATE AXIOS INSTANCE =====
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -280,26 +280,120 @@ export const AuthProvider = ({ children }) => {
   }
 
   // ===== LOGOUT =====
-  const logout = async () => {
-    try {
-      if (!USE_MOCK_API) {
-        await api.post('/auth/logout')
-      }
-    } catch (error) {
-      // Ignore logout errors
-    } finally {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      setUser(null)
-      setError(null)
-    }
-  }
+  // const logout = async () => {
+  //   try {
+  //     if (!USE_MOCK_API) {
+  //       await api.post('/auth/logout')
+  //     }
+  //   } catch (error) {
+  //     // Ignore logout errors
+  //   } finally {
+  //     localStorage.removeItem('token')
+  //     localStorage.removeItem('user')
+  //     setUser(null)
+  //     setError(null)
+  //   }
+  // }
+  const logout = () => {
+  // Simply remove tokens and clear state - no API call needed for JWT
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  setUser(null)
+  setError(null)
+  console.log('🔴 User logged out')
+}
 
   // ===== UPDATE USER =====
   const updateUser = (updatedData) => {
     const updatedUser = { ...user, ...updatedData }
     localStorage.setItem('user', JSON.stringify(updatedUser))
     setUser(updatedUser)
+  }
+
+
+  // ===== NEW: UPDATE PROFILE =====
+  const updateProfile = async (username, email) => {
+    setError(null)
+    setLoading(true)
+
+    try {
+      const response = await api.put('/users/profile', { username, email })
+      const updatedUser = response.data
+      setUser(updatedUser)
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+      return updatedUser
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to update profile'
+      setError(errorMessage)
+      throw new Error(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ===== NEW: CHANGE PASSWORD =====
+  const changePassword = async (currentPassword, newPassword) => {
+    setError(null)
+    setLoading(true)
+
+    try {
+      const response = await api.put('/users/password', { currentPassword, newPassword })
+      return response.data
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to change password'
+      setError(errorMessage)
+      throw new Error(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ===== NEW: UPLOAD AVATAR =====
+  const uploadAvatar = async (file) => {
+    setError(null)
+    setLoading(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('avatar', file)
+      
+      const response = await api.post('/users/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      
+      const updatedUser = response.data
+      setUser(updatedUser)
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+      return updatedUser
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to upload avatar'
+      setError(errorMessage)
+      throw new Error(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ===== NEW: UPDATE PREFERENCES =====
+  const updatePreferences = async (genres) => {
+    setError(null)
+    setLoading(true)
+
+    try {
+      const response = await api.put('/users/preferences', { genres })
+      const updatedUser = response.data
+      setUser(updatedUser)
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+      return updatedUser
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to update preferences'
+      setError(errorMessage)
+      throw new Error(errorMessage)
+    } finally {
+      setLoading(false)
+    }
   }
 
   // ===== VALUE OBJECT =====
@@ -311,6 +405,10 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
+    updateProfile,      // ← NEW
+    changePassword,     // ← NEW
+    uploadAvatar,       // ← NEW
+    updatePreferences,  // ← NEW
     isAuthenticated: !!user,
     isMockMode: USE_MOCK_API
   }
