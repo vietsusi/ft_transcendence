@@ -9,7 +9,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   getMe(@Request() req) {
-    return req.user;
+    return this.usersService.findById(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -23,5 +23,14 @@ export class UsersController {
       body.currentPassword,
       body.newPassword,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me/genres')
+  updateGenres(
+  @Request() req,
+  @Body() body: { genres: string[] },
+  ) {
+  return this.usersService.updateGenres(req.user.id, body.genres);
   }
 }

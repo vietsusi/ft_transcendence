@@ -38,5 +38,21 @@ export class UsersService {
   
   const { password, ...result } = updated;
   return result;
-}
+  }
+
+  async updateGenres(userId: number, genres: string[]) {
+  const updated = await this.prisma.user.update({
+    where: { id: userId },
+    data: { preferredGenres: genres },
+  });
+  const { password, ...result } = updated;
+  return result;
+  }
+
+  async findById(userId: number) {
+  const user = await this.prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error('User not found');
+  const { password, ...result } = user;
+  return result;
+  }
 }
