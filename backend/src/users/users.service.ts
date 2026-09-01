@@ -22,4 +22,21 @@ export class UsersService {
       where: { email },
     });
   }
+
+  async updatePassword(userId: number, currentPassword: string, newPassword: string) {
+  const user = await this.prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error('User not found');
+  
+  const valid = await bcrypt.compare(currentPassword, user.password);
+  if (!valid) throw new Error('Current password is incorrect');
+  
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  const updated = await this.prisma.user.update({
+    where: { id: userId },
+    data: { password: hashedPassword },
+  });
+  
+  const { password, ...result } = updated;
+  return result;
+}
 }
