@@ -1,39 +1,60 @@
-This is the ft_transcendence projects.
-Team member: Viet, Lin, An, Jasmin
-# Folder Structure
+# FT_TRANSCENDENCE
 
+Movie & TV Series Recommendation Platform
+
+**Team:** Viet, Lin, An, Jasmin
+
+---
+
+## 🚀 Quick Start
+
+```bash
+# Clone and setup
+git clone git@github.com:vietsusi/ft_transcendence.git
+cd ft_transcendence
+git checkout main
+
+# Build and run
+docker-compose -f ./docker-compose.yml up -d --build
+
+# Check status
+docker ps -a
+
+# Stop services
+docker compose -f ./docker-compose.yml down
+```
+
+## 📁 Project Structure
+```bash
 ft_transcendence/
-├── backend/                    # Person A & B's code
-│   ├── src/
-│   ├── prisma/
-│   └── package.json
-│
-├── frontend/                   # (Person D)
-│   ├── public/                 # Static files (favicon, images)
-│   ├── src/
-│   │   ├── api/               # API calls to backend
-│   │   ├── components/        # Reusable UI pieces
-│   │   ├── pages/             # Full pages (routes)
-│   │   ├── hooks/             # Custom React hooks
-│   │   ├── context/           # React Context (Auth, Theme)
-│   │   ├── utils/             # Helper functions
-│   │   ├── styles/            # CSS/tailwind
-│   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   └── routes.jsx
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── Dockerfile
-│   └── .env
-│
-├── docker-compose.yml         # Main Docker config
-├── .env                       # Environment variables
-├── .gitignore
+├── backend/          # NestJS API
+├── frontend/         # React + Vite
+├── docker-compose.yml
+├── SetUp.md          # Detailed setup guide
 └── README.md
+```
 
+## 👥 Team Responsibilities
+```bash
+Member  Role
+Viet	Frontend Lead (UI/UX, Components)
+Lin	    Backend Lead
+An	    Backend Lead
+Jasmin	Chatbox
+```
 
-# Explanation
-1. Backend and Frontend are isolated
-2. Clear ownship
-3. Easy to add new features
-4. Using Git on each developer's branch -> Merge need to have Pull Request and approval from 3 remaining person
+## 🔧 Development Workflow
+```bash
+1. Create feature branch: git checkout -b feature/your-feature
+2. Make changes and commit
+3. Push to GitHub
+4. Create Pull Request
+5. Get approval from 3 team members
+6. Merge to main
+```
+
+## 📚 Documentation
+```bash
+Setup Guide: SetUp.md
+Architecture Diagram: Architecture_Diagram.md
+```

@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react'
-import './Login.css'
 
 function Login({ onClose, onLogin, onRegister }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')  // ← NEW: For registration
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [username, setUsername] = useState('')
   const [isRegistering, setIsRegistering] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [touched, setTouched] = useState({})  // ← NEW: Track touched fields
+  const [touched, setTouched] = useState({})
 
-  // Prevent body scroll when modal is open
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => {
@@ -19,26 +17,17 @@ function Login({ onClose, onLogin, onRegister }) {
     }
   }, [])
 
-  // ===== STRICT EMAIL VALIDATION =====
   const validateEmail = (email) => {
-    // Strict email regex - requires proper TLD
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
     return emailRegex.test(email)
   }
 
-  // ===== PASSWORD VALIDATION =====
-  const validatePassword = (password) => {
-    return password.length >= 6
-  }
-
-  // ===== GET FIELD ERROR =====
   const getFieldError = (field) => {
     if (!touched[field]) return ''
-    
     switch(field) {
       case 'email':
         if (!email) return 'Email is required'
-        if (!validateEmail(email)) return 'Please enter a valid email (e.g., user@domain.com)'
+        if (!validateEmail(email)) return 'Please enter a valid email'
         return ''
       case 'password':
         if (!password) return 'Password is required'
@@ -60,7 +49,6 @@ function Login({ onClose, onLogin, onRegister }) {
     e.preventDefault()
     setError('')
 
-    // ===== MARK ALL FIELDS AS TOUCHED =====
     setTouched({
       email: true,
       password: true,
@@ -68,25 +56,21 @@ function Login({ onClose, onLogin, onRegister }) {
       confirmPassword: isRegistering
     })
 
-    // ===== VALIDATE EMAIL =====
     if (!validateEmail(email)) {
-      setError('Please enter a valid email address (e.g., user@domain.com)')
+      setError('Please enter a valid email address')
       return
     }
 
-    // ===== VALIDATE PASSWORD =====
     if (password.length < 6) {
       setError('Password must be at least 6 characters')
       return
     }
 
-    // ===== REGISTRATION VALIDATION =====
     if (isRegistering) {
       if (!username || username.length < 3) {
         setError('Username must be at least 3 characters')
         return
       }
-      
       if (password !== confirmPassword) {
         setError('Passwords do not match')
         return
@@ -108,19 +92,31 @@ function Login({ onClose, onLogin, onRegister }) {
     }
   }
 
-  // ===== HANDLE BLUR (Mark field as touched) =====
   const handleBlur = (field) => {
     setTouched({ ...touched, [field]: true })
   }
 
   return (
-    <div className="login-overlay" onClick={onClose}>
-      <div className="login-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="close-btn" onClick={onClose} aria-label="Close">×</button>
-        
-        <div className="login-header">
-          <h2>{isRegistering ? 'Create Account' : 'Welcome Back'}</h2>
-          <p>
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 relative"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 text-3xl text-gray-500 hover:text-gray-700 transition"
+        >
+          ×
+        </button>
+
+        <div className="mb-6 text-center">
+          <h2 className="text-2xl font-bold text-gray-800">
+            {isRegistering ? 'Create Account' : 'Welcome Back'}
+          </h2>
+          <p className="text-gray-600 text-sm mt-1">
             {isRegistering 
               ? 'Join us and start discovering your next favorite movie!' 
               : 'Sign in to continue your movie journey'}
@@ -128,113 +124,110 @@ function Login({ onClose, onLogin, onRegister }) {
         </div>
 
         {error && (
-          <div className="error-message">
-            <span className="error-icon">⚠️</span>
-            {error}
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
+            <span>⚠️</span>
+            <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="login-form" noValidate>
+        <form onSubmit={handleSubmit} className="space-y-4">
           {isRegistering && (
-            <div className="form-group">
-              <label htmlFor="username">Username</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
               <input
                 type="text"
-                id="username"
-                placeholder="Choose a username (min 3 characters)"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 onBlur={() => handleBlur('username')}
-                required
-                minLength={3}
+                placeholder="Choose a username (min 3 characters)"
                 disabled={loading}
-                autoComplete="username"
-                className={touched.username && getFieldError('username') ? 'error' : ''}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  touched.username && getFieldError('username') ? 'border-red-500' : 'border-gray-300'
+                }`}
               />
               {touched.username && getFieldError('username') && (
-                <span className="field-error">{getFieldError('username')}</span>
+                <p className="text-red-500 text-sm mt-1">{getFieldError('username')}</p>
               )}
             </div>
           )}
 
-          <div className="form-group">
-            <label htmlFor="email">Email Address</label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
             <input
               type="email"
-              id="email"
-              placeholder="Enter your email (e.g., user@domain.com)"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onBlur={() => handleBlur('email')}
-              required
+              placeholder="Enter your email"
               disabled={loading}
-              autoComplete="email"
-              className={touched.email && getFieldError('email') ? 'error' : ''}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                touched.email && getFieldError('email') ? 'border-red-500' : 'border-gray-300'
+              }`}
             />
             {touched.email && getFieldError('email') && (
-              <span className="field-error">{getFieldError('email')}</span>
+              <p className="text-red-500 text-sm mt-1">{getFieldError('email')}</p>
             )}
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
             <input
               type="password"
-              id="password"
-              placeholder="Enter your password (min 6 characters)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onBlur={() => handleBlur('password')}
-              required
-              minLength={6}
+              placeholder="Enter your password (min 6 characters)"
               disabled={loading}
-              autoComplete={isRegistering ? 'new-password' : 'current-password'}
-              className={touched.password && getFieldError('password') ? 'error' : ''}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                touched.password && getFieldError('password') ? 'border-red-500' : 'border-gray-300'
+              }`}
             />
             {touched.password && getFieldError('password') && (
-              <span className="field-error">{getFieldError('password')}</span>
+              <p className="text-red-500 text-sm mt-1">{getFieldError('password')}</p>
             )}
           </div>
 
           {isRegistering && (
-            <div className="form-group">
-              <label htmlFor="confirmPassword">Confirm Password</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
               <input
                 type="password"
-                id="confirmPassword"
-                placeholder="Confirm your password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 onBlur={() => handleBlur('confirmPassword')}
-                required
-                minLength={6}
+                placeholder="Confirm your password"
                 disabled={loading}
-                autoComplete="new-password"
-                className={touched.confirmPassword && getFieldError('confirmPassword') ? 'error' : ''}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  touched.confirmPassword && getFieldError('confirmPassword') ? 'border-red-500' : 'border-gray-300'
+                }`}
               />
               {touched.confirmPassword && getFieldError('confirmPassword') && (
-                <span className="field-error">{getFieldError('confirmPassword')}</span>
+                <p className="text-red-500 text-sm mt-1">{getFieldError('confirmPassword')}</p>
               )}
             </div>
           )}
 
-          <button type="submit" className="submit-btn" disabled={loading}>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+          >
             {loading ? 'Please wait...' : (isRegistering ? 'Create Account' : 'Sign In')}
           </button>
 
-          <div className="switch-mode">
-            <p>
+          <div className="text-center text-sm">
+            <p className="text-gray-600">
               {isRegistering ? 'Already have an account?' : "Don't have an account?"}
-              <button 
-                type="button" 
-                className="switch-btn"
+              <button
+                type="button"
                 onClick={() => {
                   setIsRegistering(!isRegistering)
                   setError('')
                   setTouched({})
-                  setConfirmPassword('')  // Reset confirm password on switch
+                  setConfirmPassword('')
                 }}
                 disabled={loading}
+                className="ml-1 text-blue-600 hover:underline font-medium"
               >
                 {isRegistering ? 'Sign In' : 'Sign Up'}
               </button>
