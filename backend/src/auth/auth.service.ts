@@ -10,20 +10,17 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(username: string, email: string, password: string) {
+async register(username: string, email: string, password: string) {
     const existing = await this.usersService.findByEmail(email);
     if (existing) {
       throw new ConflictException('Email already in use');
     }
     const user = await this.usersService.create(username, email, password);
+    const fullUser = await this.usersService.findById(user.id);
     const token = this.jwtService.sign({ sub: user.id, email: user.email });
     return {
       token,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-      }
+      user: fullUser,
     };
   }
 
@@ -32,14 +29,15 @@ async login(email: string, password: string) {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
+    const fullUser = await this.usersService.findById(user.id);
     const token = this.jwtService.sign({ sub: user.id, email: user.email });
     return {
       token,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-      }
+      user: fullUser,
     };
+  }
+
+  async verify(userId: number) {
+  return this.usersService.findById(userId);
   }
 }
