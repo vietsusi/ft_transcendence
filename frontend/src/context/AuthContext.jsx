@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }) => {
         } else {
           // Real backend: verify token
           const response = await api.get('/auth/verify')
-          setUser(response.data.user)
+          setUser(response.data)
         }
       } catch (error) {
         localStorage.removeItem('token')

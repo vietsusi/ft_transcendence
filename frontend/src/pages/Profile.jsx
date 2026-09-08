@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 
+const API_BASE_URL = 'http://localhost:5001'
+
 function Profile() {
-  const { user, updateUser, logout } = useAuth()
+  const { user, updateUser, logout, uploadAvatar } = useAuth()
   const fileInputRef = useRef(null)
   
   // State for editing
@@ -171,7 +173,7 @@ function Profile() {
               <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-300 flex items-center justify-center text-3xl font-bold text-gray-600 overflow-hidden">
                 {avatarPreview || user?.avatar ? (
                   <img 
-                    src={avatarPreview || user?.avatar} 
+                    src={avatarPreview ||  (user?.avatar ? `${API_BASE_URL}${user.avatar}` : null)}
                     alt="Avatar" 
                     className="w-full h-full object-cover"
                   />
