@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react'
-import { useAuth } from '../context/AuthContext'
+import React, { useState, useRef, useEffect } from 'react'
+import { useAuth, api } from '../context/AuthContext'
 
 function Profile() {
   const { user, updateUser, logout } = useAuth()
@@ -21,11 +21,14 @@ function Profile() {
   const [confirmPassword, setConfirmPassword] = useState('')
   
   // Preferences state
-  const [selectedGenres, setSelectedGenres] = useState([])
+  const [selectedGenres, setSelectedGenres] = useState(user?.preferredGenres || [])
   
   // UI state
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
+  useEffect(() => {
+  setSelectedGenres(user?.preferredGenres || [])
+}, [user?.preferredGenres])
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
@@ -56,15 +59,12 @@ function Profile() {
     
     setLoading(true)
     try {
-      // TODO: Replace with actual API call
-      // const formData = new FormData()
-      // formData.append('avatar', selectedFile)
-      // const response = await api.post('/users/avatar', formData)
-      // updateUser({ avatar: response.data.avatar })
-      
-      // Mock upload
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      updateUser({ avatar: avatarPreview })
+      const formData = new FormData()
+      formData.append('avatar', selectedFile)
+      const response = await api.post('/users/me/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      updateUser({ avatar: response.data.avatar })
       setMessage({ type: 'success', text: 'Avatar updated successfully!' })
       setSelectedFile(null)
       setAvatarPreview(null)
@@ -82,13 +82,8 @@ function Profile() {
     setLoading(true)
     
     try {
-      // TODO: Replace with actual API call
-      // const response = await api.put('/users/profile', { username, email })
-      // updateUser(response.data)
-      
-      // Mock update
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      updateUser({ username, email })
+      const response = await api.patch('/users/me', { username })
+      updateUser(response.data)
       setMessage({ type: 'success', text: 'Profile updated successfully!' })
       setIsEditing(false)
     } catch (error) {
@@ -117,11 +112,7 @@ function Profile() {
     
     setLoading(true)
     try {
-      // TODO: Replace with actual API call
-      // await api.put('/users/password', { currentPassword, newPassword })
-      
-      // Mock update
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await api.patch('/users/me/password', { currentPassword, newPassword })
       setMessage({ type: 'success', text: 'Password updated successfully!' })
       setCurrentPassword('')
       setNewPassword('')
@@ -136,21 +127,18 @@ function Profile() {
 
   // Handle genre preferences
   const handleGenreToggle = (genre) => {
-    setSelectedGenres(prev => 
-      prev.includes(genre) 
-        ? prev.filter(g => g !== genre)
-        : [...prev, genre]
-    )
+  setSelectedGenres(prev => {
+    const current = prev.length > 0 ? prev : (user?.preferredGenres || [])
+    return current.includes(genre)
+      ? current.filter(g => g !== genre)
+      : [...current, genre]
+  })
   }
 
   const handleSavePreferences = async () => {
     setLoading(true)
     try {
-      // TODO: Replace with actual API call
-      // await api.put('/users/preferences', { genres: selectedGenres })
-      
-      // Mock update
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await api.patch('/users/me/genres', { genres: selectedGenres })
       updateUser({ preferredGenres: selectedGenres })
       setMessage({ type: 'success', text: 'Preferences saved successfully!' })
     } catch (error) {
@@ -171,7 +159,7 @@ function Profile() {
               <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-300 flex items-center justify-center text-3xl font-bold text-gray-600 overflow-hidden">
                 {avatarPreview || user?.avatar ? (
                   <img 
-                    src={avatarPreview || user?.avatar} 
+                    src={avatarPreview || (user?.avatar ? `http://localhost:5001${user.avatar}` : null)}
                     alt="Avatar" 
                     className="w-full h-full object-cover"
                   />
@@ -410,18 +398,11 @@ function Profile() {
               </p>
               <div className="flex flex-wrap gap-2 mb-6">
                 {availableGenres.map((genre) => {
-                  const isSelected = selectedGenres.includes(genre) || 
-                    user?.preferredGenres?.includes(genre)
+                  const isSelected = selectedGenres.includes(genre)
                   return (
                     <button
                       key={genre}
-                      onClick={() => {
-                        if (!isSelected) {
-                          setSelectedGenres([...selectedGenres, genre])
-                        } else {
-                          setSelectedGenres(selectedGenres.filter(g => g !== genre))
-                        }
-                      }}
+                      onClick={() => handleGenreToggle(genre)}
                       className={`px-4 py-2 rounded-full text-sm font-medium transition ${
                         isSelected
                           ? 'bg-blue-600 text-white hover:bg-blue-700'

@@ -64,4 +64,17 @@ export class UsersService {
   const { password, ...result } = updated;
   return result;
   }
+
+  async updateUsername(userId: number, username: string) {
+  const existing = await this.prisma.user.findUnique({ where: { username } });
+  if (existing && existing.id !== userId) {
+    throw new Error('Username already taken');
+  }
+  const updated = await this.prisma.user.update({
+    where: { id: userId },
+    data: { username },
+  });
+  const { password, ...result } = updated;
+  return result;
+  }
 }

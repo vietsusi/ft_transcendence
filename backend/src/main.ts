@@ -19,8 +19,8 @@ async function bootstrap() {
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
     credentials: true,
   });
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-    prefix: '/uploads',
+  app.useStaticAssets(join(__dirname, '..', '..', 'uploads'), {
+  prefix: '/uploads',
   });
   const swaggerConfig = new DocumentBuilder()
     .setTitle('ft_transcendence Movie API')
@@ -33,6 +33,6 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);
-  await app.listen(5001);
+  await app.listen(process.env.PORT ?? 5000);
 }
 bootstrap();

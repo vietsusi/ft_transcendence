@@ -58,4 +58,13 @@ export class UsersController {
   uploadAvatar(@Request() req, @UploadedFile() file: Express.Multer.File) {
     return this.usersService.updateAvatar(req.user.id, `/uploads/avatars/${file.filename}`);
   }
+
+@UseGuards(JwtAuthGuard)
+@Patch('me')
+updateMe(
+@Request() req,
+@Body() body: { username: string },
+) {
+  return this.usersService.updateUsername(req.user.id, body.username);
+}
 }
