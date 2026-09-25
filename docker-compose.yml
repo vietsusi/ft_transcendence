@@ -34,6 +34,7 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
+      - ./backend/uploads:/app/uploads
     command: sh -c "npx prisma migrate deploy && npx prisma db seed && npm run start:dev"
 
   # Frontend service

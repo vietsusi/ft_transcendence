@@ -27,7 +27,7 @@ function Dashboard() {
           totalWatched: 42,
           totalReviews: 15,
           watchlistCount: 8,
-          favoriteGenres: ['Sci-Fi', 'Action', 'Drama'],
+          favoriteGenres: user?.preferredGenres || [],
           recentActivity: [
             { type: 'watched', movie: 'Viet Frontend Demo', date: '2 days ago' },
             { type: 'reviewed', movie: 'Transcendance Demo', date: '3 days ago' },
