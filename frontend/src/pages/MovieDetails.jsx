@@ -5,6 +5,7 @@ import { useAuth, api } from '../context/AuthContext'
 const getWatchlistStorageKey = (user) => `watchlist:${user?.id ?? user?.email ?? 'guest'}`
 const getRatingsStorageKey = (user) => `ratings:${user?.id ?? user?.email ?? 'guest'}`
 const getReviewsStorageKey = (user) => `reviews:${user?.id ?? user?.email ?? 'guest'}`
+const getActivityStorageKey = (user) => `activity:${user?.id ?? user?.email ?? 'guest'}`
 
 const readStoredJson = (key) => {
   try {
@@ -18,6 +19,19 @@ const readStoredJson = (key) => {
 
 const writeStoredJson = (key, items) => {
   localStorage.setItem(key, JSON.stringify(items))
+}
+
+const appendActivityEntry = (user, entry) => {
+  if (!user) return
+
+  const key = getActivityStorageKey(user)
+  const current = readStoredJson(key)
+  const next = [
+    entry,
+    ...current.filter(item => !(item.movieId === entry.movieId && item.type === entry.type)),
+  ]
+
+  writeStoredJson(key, next)
 }
 
 const readStoredWatchlist = (user) => {
@@ -104,6 +118,21 @@ function MovieDetails() {
       },
     ]
 
+    const watchlistLabelMap = {
+      'want-to-watch': 'Want to Watch',
+      'watching': 'Currently Watching',
+      'watched': 'Watched',
+    }
+
+    const activityEntry = {
+      type: status,
+      title: movie.title,
+      label: watchlistLabelMap[status] || status,
+      updatedAt: new Date().toISOString(),
+      movieId,
+    }
+
+    appendActivityEntry(user, activityEntry)
     writeStoredWatchlist(user, updatedItems)
     setWatchlistStatus(status)
   }
@@ -117,14 +146,36 @@ function MovieDetails() {
 
     const nextRatings = [
       ...ratings.filter(item => item.movieId !== movieId),
-      { movieId, rating, updatedAt: new Date().toISOString() }
+      {
+        movieId,
+        title: movie.title,
+        posterUrl: movie.poster || movie.posterUrl || null,
+        rating,
+        updatedAt: new Date().toISOString(),
+      }
     ]
 
     const trimmedReview = review.trim()
     const nextReviews = [
       ...reviews.filter(item => item.movieId !== movieId),
-      ...(trimmedReview ? [{ movieId, review: trimmedReview, updatedAt: new Date().toISOString() }] : [])
+      ...(trimmedReview ? [{
+        movieId,
+        title: movie.title,
+        posterUrl: movie.poster || movie.posterUrl || null,
+        review: trimmedReview,
+        updatedAt: new Date().toISOString(),
+      }] : [])
     ]
+
+    const reviewActivityEntry = {
+      type: 'reviewed',
+      title: movie.title,
+      label: 'Reviewed',
+      updatedAt: new Date().toISOString(),
+      movieId,
+    }
+
+    appendActivityEntry(user, reviewActivityEntry)
 
     writeStoredJson(getRatingsStorageKey(user), nextRatings)
     writeStoredJson(getReviewsStorageKey(user), nextReviews)
