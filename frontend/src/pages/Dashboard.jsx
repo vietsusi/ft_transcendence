@@ -2,6 +2,20 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Link } from 'react-router-dom'
 
+const getWatchlistStorageKey = (user) => `watchlist:${user?.id ?? user?.email ?? 'guest'}`
+const getRatingsStorageKey = (user) => `ratings:${user?.id ?? user?.email ?? 'guest'}`
+const getReviewsStorageKey = (user) => `reviews:${user?.id ?? user?.email ?? 'guest'}`
+
+const readStoredJson = (key) => {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : []
+  } catch (error) {
+    console.error('Failed to read stored dashboard data:', error)
+    return []
+  }
+}
+
 function Dashboard() {
   const { user } = useAuth()
   const [stats, setStats] = useState({
@@ -14,25 +28,58 @@ function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Fetch user stats
     const fetchStats = async () => {
       setLoading(true)
       try {
-        // Replace with actual API call
-        // const response = await api.get('/dashboard/stats')
-        // setStats(response.data)
-        
-        // Mock data
+        if (!user) {
+          setStats({
+            totalWatched: 0,
+            totalReviews: 0,
+            watchlistCount: 0,
+            favoriteGenres: [],
+            recentActivity: []
+          })
+          return
+        }
+
+        const watchlist = readStoredJson(getWatchlistStorageKey(user))
+        const ratings = readStoredJson(getRatingsStorageKey(user))
+        const reviews = readStoredJson(getReviewsStorageKey(user))
+
+        const watchedCount = watchlist.filter(item => item.status === 'watched').length
+        const totalReviews = reviews.length
+        const recentActivity = [
+          ...watchlist
+            .map(item => ({
+              type: item.status === 'watched' ? 'watched' : 'watchlist',
+              movie: item.title,
+              date: item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : 'Recently',
+              timestamp: new Date(item.updatedAt || Date.now()).getTime(),
+            })),
+          ...ratings
+            .map(item => ({
+              type: 'reviewed',
+              movie: `Rated ${item.movieId}`,
+              date: item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : 'Recently',
+              timestamp: new Date(item.updatedAt || Date.now()).getTime(),
+            })),
+          ...reviews
+            .map(item => ({
+              type: 'reviewed',
+              movie: `Review for ${item.movieId}`,
+              date: item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : 'Recently',
+              timestamp: new Date(item.updatedAt || Date.now()).getTime(),
+            }))
+        ]
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .slice(0, 5)
+
         setStats({
-          totalWatched: 42,
-          totalReviews: 15,
-          watchlistCount: 8,
+          totalWatched: watchedCount,
+          totalReviews,
+          watchlistCount: watchlist.length,
           favoriteGenres: user?.preferredGenres || [],
-          recentActivity: [
-            { type: 'watched', movie: 'Viet Frontend Demo', date: '2 days ago' },
-            { type: 'reviewed', movie: 'Transcendance Demo', date: '3 days ago' },
-            { type: 'watchlist', movie: 'Another Film', date: '1 week ago' },
-          ]
+          recentActivity,
         })
       } catch (error) {
         console.error('Error fetching stats:', error)
@@ -40,8 +87,9 @@ function Dashboard() {
         setLoading(false)
       }
     }
+
     fetchStats()
-  }, [])
+  }, [user])
 
   if (!user) {
     return (

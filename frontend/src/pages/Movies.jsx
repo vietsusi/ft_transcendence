@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../context/AuthContext'
 
 function Movies() {
@@ -98,7 +99,11 @@ const handleSearch = async (e) => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {movies.map((movie) => (
-          <div key={movie.id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden">
+          <Link
+            key={movie.id}
+            to={`/movies/${movie.id}`}
+            className="block bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden cursor-pointer"
+          >
             <div className="h-48 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden">
               {movie.posterUrl ? (
                 <img src={movie.posterUrl} alt={movie.title} className="w-full h-full object-cover" />
@@ -118,13 +123,13 @@ const handleSearch = async (e) => {
               </div>
               <div className="flex flex-wrap gap-1 mt-2">
                 {movie.genres?.map(genre => (
-                  <span key={genre.id} className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
-                    {genre.name}
+                  <span key={genre.id || genre.name} className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                    {genre.name || genre}
                   </span>
                 ))}
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
