@@ -2,7 +2,7 @@ import { MovieType, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const genreNames = [
+const fallbackGenreNames = [
   'Action',
   'Adventure',
   'Comedy',
@@ -27,7 +27,22 @@ type SeedMovie = {
   genres: string[];
 };
 
-const movies: SeedMovie[] = [
+type TmdbGenreResponse = {
+  genres: Array<{ id: number; name: string }>;
+};
+
+type TmdbMovieResult = {
+  title?: string;
+  name?: string;
+  overview?: string;
+  release_date?: string;
+  first_air_date?: string;
+  poster_path?: string | null;
+  vote_average?: number;
+  genre_ids?: number[];
+};
+
+const fallbackMovies: SeedMovie[] = [
   {
     title: 'The Matrix',
     description:
@@ -270,7 +285,94 @@ const movies: SeedMovie[] = [
   },
 ];
 
+async function fetchJson<T>(url: string, apiKey: string): Promise<T> {
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`TMDB request failed (${response.status}) for ${url}`);
+  }
+
+  return (await response.json()) as T;
+}
+
+async function fetchTmdbMovies(apiKey: string): Promise<SeedMovie[]> {
+  const movieGenreResponse = await fetchJson<TmdbGenreResponse>(
+    'https://api.themoviedb.org/3/genre/movie/list?language=en-US',
+    apiKey,
+  );
+  const tvGenreResponse = await fetchJson<TmdbGenreResponse>(
+    'https://api.themoviedb.org/3/genre/tv/list?language=en-US',
+    apiKey,
+  );
+
+  const genreMap = Object.fromEntries(
+    [...movieGenreResponse.genres, ...tvGenreResponse.genres].map((genre) => [String(genre.id), genre.name]),
+  );
+
+  const moviePages = await Promise.all(
+    [1, 2].map((page) =>
+      fetchJson<{ results: TmdbMovieResult[] }>(
+        `https://api.themoviedb.org/3/movie/popular?language=en-US&page=${page}`,
+        apiKey,
+      ),
+    ),
+  );
+
+  const tvPages = await Promise.all(
+    [1, 2].map((page) =>
+      fetchJson<{ results: TmdbMovieResult[] }>(
+        `https://api.themoviedb.org/3/tv/popular?language=en-US&page=${page}`,
+        apiKey,
+      ),
+    ),
+  );
+
+  const discoveredMovies: SeedMovie[] = [...moviePages, ...tvPages]
+    .flatMap((page) => page.results)
+    .map((item) => {
+      const title = item.title ?? item.name ?? 'Untitled';
+      const releaseDate = item.release_date ?? item.first_air_date ?? '0000-00-00';
+      const releaseYear = Number(releaseDate.slice(0, 4) || 0);
+      const type = item.title !== undefined ? MovieType.MOVIE : MovieType.TV_SERIES;
+      const normalizedGenres = (item.genre_ids ?? [])
+        .map((genreId) => genreMap[String(genreId)])
+        .filter((genreName): genreName is string => Boolean(genreName));
+
+      return {
+        title,
+        description: item.overview || 'No description available.',
+        type,
+        releaseYear,
+        posterUrl: item.poster_path
+          ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
+          : 'https://placehold.co/500x750/1f2937/ffffff?text=No+Poster',
+        averageRating: Number((item.vote_average ?? 0).toFixed(1)),
+        genres: normalizedGenres.length > 0 ? normalizedGenres : ['Drama'],
+      } satisfies SeedMovie;
+    });
+
+  const uniqueMovies = new Map<string, SeedMovie>();
+  for (const movie of discoveredMovies) {
+    if (!movie.title || !movie.releaseYear) continue;
+    const key = `${movie.title}-${movie.releaseYear}`;
+    if (!uniqueMovies.has(key)) {
+      uniqueMovies.set(key, movie);
+    }
+  }
+
+  return [...uniqueMovies.values()];
+}
+
 async function main() {
+  const apiKey = process.env.TMDB_API_KEY;
+  const movies = apiKey ? await fetchTmdbMovies(apiKey) : fallbackMovies;
+  const genreNames = [...new Set(movies.flatMap((movie) => movie.genres).filter(Boolean))];
+
   for (const name of genreNames) {
     await prisma.genre.upsert({
       where: { name },
@@ -294,21 +396,23 @@ async function main() {
         releaseYear: movie.releaseYear,
         posterUrl: movie.posterUrl,
         averageRating: movie.averageRating,
-        genres: {
-          connect: movie.genres.map((name) => ({ name })),
-        },
+        genres: movie.genres.length
+          ? {
+              connect: movie.genres.map((name) => ({ name })),
+            }
+          : undefined,
       },
     });
   }
 
   console.log(
-    `Seed complete: ${genreNames.length} genres, ${movies.length} movies/series.`,
+    `Seed complete: ${genreNames.length} genres, ${movies.length} movies/series. Source: ${apiKey ? 'TMDB' : 'fallback seed'}.`,
   );
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
+  .catch((error) => {
+    console.error('Seed failed:', error);
     process.exit(1);
   })
   .finally(async () => {
