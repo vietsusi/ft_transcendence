@@ -21,6 +21,7 @@ function Navbar({ user, isAuthenticated, onLoginClick, onLogout }) {
           </Link>
 
           <div className="flex items-center gap-3">
+            <Link to="/chat" className="text-blue-700 font-medium px-3 py-2">Chat</Link>
             <Link to="/movies" className="text-gray-700 hover:text-blue-600 font-medium transition px-3 py-2 rounded-lg hover:bg-blue-50 text-sm">
               Movies
             </Link>
