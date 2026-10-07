@@ -67,12 +67,12 @@ export class RecommendationsService {
         windowLimited: total > 20 * limit,
       },
       meta: {
-        algorithm: 'content-diversity-v1',
+        algorithm: 'content-diversity-v2',
         mode,
         preferredGenres: user.preferredGenres,
         signals: [
           'genre-preferences',
-          'non-mock-catalog-score',
+          'catalog-score',
           'release-year',
           'diversity',
         ],

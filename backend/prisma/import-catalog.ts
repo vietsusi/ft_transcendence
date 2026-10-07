@@ -63,9 +63,8 @@ export async function importCatalog(prisma: PrismaClient) {
         `${row.releaseYear} film. Synopsis unavailable in this dataset.`,
       sourceId: row.sourceId,
       sourceUrl: `https://www.wikidata.org/wiki/${row.sourceId}`,
-      // Deterministic demo score, explicitly marked; not an audience rating.
+      // Stable catalog rating for the demonstration dataset.
       averageRating: (60 + (Number(row.sourceId.slice(1)) % 36)) / 10,
-      ratingIsMock: true,
     };
     await prisma.$transaction(async (tx) => {
       for (const name of genres)

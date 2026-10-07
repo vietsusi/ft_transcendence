@@ -6,7 +6,7 @@ Selection query: films (`wdt:P31 wd:Q11424`) with more than 40 sitelinks and a r
 
 Cleaning: normalize whitespace and Unicode; reject missing/entity-ID titles and invalid years; deduplicate source IDs; map fine-grained genres to application genres; preserve unknown genres as Other; upsert by source ID or title/year. Existing IDs and poster URLs are preserved. The original 24 hand-authored demo records remain available, including TV series.
 
-Catalog cards use text rather than requiring poster images. Descriptions are Wikidata metadata descriptions, not full plot summaries. Missing descriptions explicitly say unavailable. Imported ratings are deterministic **mock demo scores**, with `ratingIsMock=true`; UI must label them. Never describe them as real audience ratings. Original seed scores are pre-existing static catalog values, not live audience ratings. Re-running `prisma db seed` does not duplicate imported films.
+Catalog cards use text rather than requiring poster images. Descriptions are Wikidata metadata descriptions, not full plot summaries. Missing descriptions explicitly say unavailable. Re-running `prisma db seed` does not duplicate imported films.
 
 ```sparql
 SELECT ?film ?filmLabel ?filmDescription ?date ?genreLabel WHERE {

@@ -13,7 +13,6 @@ const movie = (
   type: 'MOVIE',
   releaseYear: 2000,
   averageRating: 8,
-  ratingIsMock: true,
   ...overrides,
 });
 describe('content recommendations', () => {
@@ -42,25 +41,30 @@ describe('content recommendations', () => {
       );
     }
   });
-  it('does not change ordering when mock scores change', () => {
-    const a = [
-      movie(1, ['Drama'], { averageRating: 1 }),
-      movie(2, ['Drama'], { averageRating: 10 }),
-    ];
-    const b = a.map((m) => ({ ...m, averageRating: 11 - m.averageRating }));
-    expect(rankRecommendations(a, [], 2).ranked.map((r) => r.movie.id)).toEqual(
-      rankRecommendations(b, [], 2).ranked.map((r) => r.movie.id),
-    );
-    expect(
-      rankRecommendations(a, [], 2).ranked.every(
-        (r) => !r.recommendation.reasons.includes('Strong catalog score'),
-      ),
-    ).toBe(true);
-  });
-  it('uses real scores, treats missing scores neutrally, and clamps quality', () => {
+  it('uses all catalog scores to rank and explain both discovery and personalized picks', () => {
     const catalog = [
-      movie(1, ['Drama'], { ratingIsMock: false, averageRating: 0 }),
-      movie(2, ['Drama'], { ratingIsMock: false, averageRating: 9 }),
+      movie(1, ['Drama'], { averageRating: 6 }),
+      movie(2, ['Drama'], { averageRating: 9 }),
+    ];
+    for (const preferences of [[], ['Drama']]) {
+      const first = rankRecommendations(catalog, preferences, 2).ranked;
+      expect(first.map((r) => r.movie.id)).toEqual([2, 1]);
+      expect(first[0].recommendation.reasons).toContain('Strong catalog score');
+      const updated = catalog.map((m) => ({
+        ...m,
+        averageRating: 15 - m.averageRating,
+      }));
+      expect(
+        rankRecommendations(updated, preferences, 2).ranked.map(
+          (r) => r.movie.id,
+        ),
+      ).toEqual([1, 2]);
+    }
+  });
+  it('treats missing scores neutrally and keeps invalid scores out of ranking', () => {
+    const catalog = [
+      movie(1, ['Drama'], { averageRating: 0 }),
+      movie(2, ['Drama'], { averageRating: 9 }),
     ];
     expect(rankRecommendations(catalog, [], 2).ranked[0].movie.id).toBe(2);
     expect(

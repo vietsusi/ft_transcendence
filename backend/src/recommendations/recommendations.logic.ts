@@ -1,10 +1,10 @@
-/** Pure, deterministic content ranking. No user behavior or mock-rating signals. */
+import { ratingQuality } from '../movies/movie-rating';
+/** Pure, deterministic content ranking. Uses saved preferences and catalog ratings. */
 export type RecommendationMovie = {
   id: number;
   type: string;
   releaseYear: number;
   averageRating: number;
-  ratingIsMock: boolean;
   genres: { name: string }[];
 };
 
@@ -52,12 +52,10 @@ export function rankRecommendations<T extends RecommendationMovie>(
       0,
     );
     const affinity = dot / (preferenceNorm * norm(genres) || 1);
-    // Missing, zero or synthetic ratings provide no quality advantage.
+    // Missing or zero ratings provide a neutral quality signal.
     const hasRating =
-      !movie.ratingIsMock &&
-      Number.isFinite(movie.averageRating) &&
-      movie.averageRating > 0;
-    const quality = hasRating ? Math.min(10, movie.averageRating) / 10 : 0.5;
+      Number.isFinite(movie.averageRating) && movie.averageRating > 0;
+    const quality = ratingQuality(movie.averageRating);
     const recency = Math.max(0, 1 - Math.max(0, year - movie.releaseYear) / 50);
     const score = personalized
       ? 0.7 * affinity + 0.2 * quality + 0.1 * recency

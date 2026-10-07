@@ -1,3 +1,4 @@
+import { ratingQuality } from '../movies/movie-rating';
 import { z } from 'zod';
 
 export const intentSchema = z.object({
@@ -45,7 +46,6 @@ export type CatalogMovie = {
   releaseYear: number;
   type: string;
   averageRating: number;
-  ratingIsMock: boolean;
   posterUrl: string | null;
   sourceUrl: string | null;
   genres: { name: string }[];
@@ -98,7 +98,8 @@ export function selectMovies(
       const preference = names.filter((n) => preferred.includes(n)).length;
       return {
         movie,
-        score: overlap * 4 + preference * 2 + movie.averageRating / 10,
+        score:
+          overlap * 4 + preference * 2 + ratingQuality(movie.averageRating),
       };
     })
     .sort((a, b) => b.score - a.score || a.movie.id - b.movie.id)

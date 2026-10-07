@@ -13,7 +13,6 @@ const movie = {
   releaseYear: 2020,
   type: 'MOVIE',
   averageRating: 7,
-  ratingIsMock: true,
   posterUrl: null,
   sourceUrl: null,
   genres: [{ name: 'Comedy' }],

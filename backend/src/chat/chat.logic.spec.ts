@@ -15,7 +15,6 @@ const movies: CatalogMovie[] = [
     type: 'MOVIE',
     description: 'Stored facts',
     averageRating: 7,
-    ratingIsMock: true,
     posterUrl: null,
     sourceUrl: null,
   },
@@ -27,7 +26,6 @@ const movies: CatalogMovie[] = [
     type: 'MOVIE',
     description: 'Stored facts',
     averageRating: 9,
-    ratingIsMock: true,
     posterUrl: null,
     sourceUrl: null,
   },
@@ -39,7 +37,6 @@ const movies: CatalogMovie[] = [
     type: 'TV_SERIES',
     description: 'Stored facts',
     averageRating: 8,
-    ratingIsMock: false,
     posterUrl: null,
     sourceUrl: null,
   },
@@ -81,6 +78,33 @@ describe('catalog grounding', () => {
     ).toEqual([2]));
   it('ranks saved preferences above a larger score', () =>
     expect(selectMovies(movies, base, ['Comedy'])[0].id).toBe(3));
+  it('uses every catalog rating when genre relevance is equal', () => {
+    const catalog = [
+      { ...movies[0], id: 10, averageRating: 6 },
+      { ...movies[0], id: 11, averageRating: 9 },
+    ];
+    for (const intent of [
+      base,
+      { ...base, intent: 'similar' as const, referenceId: 1 },
+    ]) {
+      const source =
+        intent.intent === 'similar' ? [movies[0], ...catalog] : catalog;
+      expect(selectMovies(source, intent, []).map((m) => m.id)).toEqual([
+        11, 10,
+      ]);
+      const updated = source.map((m) =>
+        m.id === 10 ? { ...m, averageRating: 10 } : m,
+      );
+      expect(selectMovies(updated, intent, [])[0].id).toBe(10);
+    }
+  });
+  it('does not let non-finite scores corrupt ranking or break relevance priority', () => {
+    const catalog = [
+      { ...movies[0], averageRating: NaN },
+      { ...movies[1], averageRating: 9 },
+    ];
+    expect(selectMovies(catalog, base, []).map((m) => m.id)).toEqual([2, 1]);
+  });
   it('similarity excludes source and requires overlapping genres', () =>
     expect(
       selectMovies(

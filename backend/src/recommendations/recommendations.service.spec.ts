@@ -9,7 +9,6 @@ const catalog = Array.from({ length: 30 }, (_, i) => ({
   type: 'MOVIE',
   releaseYear: 2020,
   averageRating: 8,
-  ratingIsMock: true,
 }));
 describe('recommendations service', () => {
   const prisma = {
@@ -34,7 +33,6 @@ describe('recommendations service', () => {
     });
     expect(result.items[0]).toMatchObject({
       title: 'Film 2',
-      ratingIsMock: true,
       recommendation: { matchedGenres: ['Sci-Fi'] },
     });
     expect(result.pagination).toMatchObject({ total: 30, totalPages: 3 });

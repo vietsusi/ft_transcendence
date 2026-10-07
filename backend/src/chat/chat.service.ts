@@ -243,8 +243,8 @@ export class ChatService {
         ? '你好！告诉我喜欢的类型，或问我库内某部电影。'
         : 'Hello! Tell me a genre you enjoy, or ask about a film in our catalog.',
       help: zh
-        ? '我能查询库内电影、按类型和年份推荐，并寻找相似作品。点击结果卡片可打开详情。评分可能是标注过的演示分；暂不提供播放资源、实时资讯或完整剧情。'
-        : 'I can search our catalog, recommend by genre/year, and find similar titles. Open a card for details. Some scores are labeled demo values. Playback, live news and full plots are unavailable.',
+        ? '我能查询库内电影、按类型和年份推荐，并寻找相似作品。点击结果卡片可打开详情。评分参与推荐排序；暂不提供播放资源、实时资讯或完整剧情。'
+        : 'I can search our catalog, recommend by genre/year, and find similar titles. Open a card for details. Catalog ratings contribute to recommendation ranking. Playback, live news and full plots are unavailable.',
       offtopic: zh
         ? '我目前专注本站影视目录。可以告诉我想看的类型、年份，或片名。'
         : 'I focus on this site’s film catalog. Ask about a title, genre or release year.',

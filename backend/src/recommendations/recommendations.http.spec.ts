@@ -22,7 +22,6 @@ describe('recommendations HTTP boundary', () => {
           type: 'MOVIE',
           releaseYear: 2020,
           averageRating: 9,
-          ratingIsMock: true,
           genres: [{ name: 'Drama' }],
         },
       ]),

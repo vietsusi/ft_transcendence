@@ -19,7 +19,7 @@ Deterministic checks establish membership and consistency of referenced IDs. Kno
 
 **Free-text semantic safety is not a formal guarantee.** The independent verifier can still miss a novel/obfuscated outside title or unsupported claim that deterministic checks cannot recognize; it uses the same configured model in a separate call, so errors can be correlated. Prompt instructions alone are not the safety boundary, but the semantic verifier is still probabilistic. Do not advertise this as mathematically preventing every possible outside-title string. Requiring that stronger invariant would require restricting displayed language to a closed grammar/templates, reducing open-ended generation. Keep adversarial tests and review this tradeoff during module acceptance.
 
-Catalog descriptions are database facts, not externally verified truth. Snapshot rows can also be edited/deleted after a response. The 500-row catalog cap and rule ranking are unchanged. Ranking remains 4 × requested/reference genre overlaps + 2 × preference overlaps + catalog score / 10, ties by ID. Mock scores remain explicitly labeled; no learned user model exists.
+Catalog descriptions are database facts, not externally verified truth. Snapshot rows can also be edited/deleted after a response. The 500-row catalog cap and rule ranking are unchanged. Ranking remains 4 × requested/reference genre overlaps + 2 × preference overlaps + catalog score / 10, ties by ID.
 
 ## Supported responses
 

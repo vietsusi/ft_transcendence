@@ -23,7 +23,7 @@ Open the site, register or sign in, then select **Chat**. Movies and detail page
 
 ## Data
 
-The seed retains the original 24 demo records and upserts 80 cleaned Wikidata films, merging overlaps. See [dataset provenance](backend/data/README.md). Run `docker compose exec backend npx prisma db seed` to repeat import safely. Imported scores are mocked and labeled in the interface.
+The seed retains the original 24 demo records and upserts 80 cleaned Wikidata films, merging overlaps. See [dataset provenance](backend/data/README.md). Run `docker compose exec backend npx prisma db seed` to repeat import safely.
 
 PostgreSQL data is stored in the project-scoped `db_data` named volume. `docker compose down` stops/removes project containers while keeping data. Do not use global Docker prune commands or `down -v` unless you explicitly intend to delete data.
 
