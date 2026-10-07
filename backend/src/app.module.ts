@@ -1,3 +1,4 @@
+import { RecommendationsModule } from './recommendations/recommendations.module';
 import { Module } from '@nestjs/common';
 import { ChatModule } from './chat/chat.module';
 import { APP_GUARD } from '@nestjs/core';
@@ -12,6 +13,7 @@ import { PrismaService } from './prisma/prisma.service';
 @Module({
   imports: [
     ChatModule,
+    RecommendationsModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     AuthModule,
     UsersModule,
