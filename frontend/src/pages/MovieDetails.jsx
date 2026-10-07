@@ -18,7 +18,7 @@ export default function MovieDetails() {
     <h1 className="text-4xl font-bold mt-2">{movie.title}</h1>
     <div className="flex flex-wrap gap-2 my-5">{movie.genres.map(g => <span key={g.id} className="rounded-full bg-blue-50 text-blue-800 px-3 py-1 text-sm">{g.name}</span>)}</div>
     <p className="leading-7 text-slate-700">{movie.description}</p>
-    <p className="my-6">{movie.averageRating.toFixed(1)}/10 <span className="text-slate-500 text-sm">{movie.ratingIsMock ? 'Deterministic demo score — not a real audience rating' : 'Catalog score — not computed from user reviews'}</span></p>
+    <p className="my-6">{movie.averageRating.toFixed(1)}/10 <span className="text-slate-500 text-sm">Rating</span></p>
     {movie.sourceUrl && <a className="text-blue-700 text-sm" href={movie.sourceUrl} target="_blank" rel="noreferrer">Metadata source: Wikidata (CC0) ↗</a>}
     <p className="text-sm text-slate-500 mt-4">Only stored metadata is shown. Full plot, cast and streaming availability may be unavailable.</p>
     <Link to={`/chat?movie=${movie.id}`} className="inline-block bg-blue-600 text-white rounded-lg px-5 py-3 mt-6">Find similar titles in chat</Link>

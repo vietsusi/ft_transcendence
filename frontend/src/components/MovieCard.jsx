@@ -5,7 +5,7 @@ export default function MovieCard({ movie }) {
     <h3 className="font-semibold text-lg text-slate-900">{movie.title}</h3>
     <p className="text-sm text-slate-600 mt-2">{movie.genres.map(g => g.name).join(' · ')}</p>
     <p className="text-sm text-slate-600 mt-2 line-clamp-3">{movie.description}</p>
-    <p className="text-xs text-slate-500 mt-3">{movie.averageRating.toFixed(1)}/10 · {movie.ratingIsMock ? 'Demo score (mock)' : 'Catalog score'}</p>
+    <p className="text-xs text-slate-500 mt-3">{movie.averageRating.toFixed(1)}/10 · Rating</p>
     <span className="inline-block mt-3 text-sm text-blue-700">View details →</span>
   </Link>
 }

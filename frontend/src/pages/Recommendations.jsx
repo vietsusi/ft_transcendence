@@ -83,7 +83,7 @@ function RecommendationFeed() {
 
     <div className="rounded-xl border border-blue-100 bg-blue-50 p-5 mb-6">
       <h2 className="font-semibold text-slate-900">How we choose your picks</h2>
-      <p className="text-sm text-slate-600 mt-2">We balance your saved genre preferences with catalog scores, release year and variety. Demo scores do not influence ranking.</p>
+      <p className="text-sm text-slate-600 mt-2">We balance your saved genre preferences with ratings, release year and variety.</p>
       <p className="text-sm text-slate-600 mt-2">Recommendations currently use genre preferences; viewing history and personal ratings are not available yet.</p>
       {!loading && !error && result && <>
         <p className="text-sm font-medium text-blue-800 mt-3">{personalized ? 'Picked for your preferences' : 'Discovery picks'}{!personalized && (result.meta.preferredGenres.length ? ' — your saved genres do not match this selection.' : ' — save your favorite genres in Profile to personalize your picks.')}</p>
@@ -132,9 +132,8 @@ function RecommendationFeed() {
         {result.items.length ? <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {result.items.map(movie => <article key={movie.id} className="flex flex-col gap-2">
             <MovieCard movie={movie} />
-            <div className="px-4 pb-3 text-sm text-blue-800">
-              <p className="font-medium">Why this pick</p>
-              <ul className="mt-1 space-y-1">{movie.recommendation.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>
+            <div className="px-4 pb-3 text-sm text-[#9a6450]">
+              <ul aria-label="Recommendation reasons" className="space-y-1">{movie.recommendation.reasons.map(reason => <li key={reason}>{reason}</li>)}</ul>
             </div>
           </article>)}
         </div> : <div className="text-center py-12 bg-white border rounded-xl">

@@ -17,7 +17,7 @@ export default function Movies() {
   }, [query, genre, page])
   return <section className="max-w-6xl mx-auto">
     <h1 className="text-3xl font-bold text-slate-900">Explore the catalog</h1>
-    <p className="text-slate-600 my-3">Real database entries. Imported demo scores are labeled; chat links to these same films.</p>
+    <p className="text-slate-600 my-3">Discover movies and TV series, explore genres, and find your next favorite.</p>
     <form className="flex flex-wrap gap-3 my-6" onSubmit={e => { e.preventDefault(); setQuery(search); setPage(1) }}>
       <input aria-label="Search movies" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search title or description" className="border rounded-lg p-3 flex-1 min-w-48" />
       <select aria-label="Genre" value={genre} onChange={e => { setGenre(e.target.value); setPage(1) }} className="border rounded-lg p-3"><option value="">All genres</option>{genres.map(g => <option key={g.id}>{g.name}</option>)}</select>

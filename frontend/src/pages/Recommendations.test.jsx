@@ -13,7 +13,7 @@ vi.mock('../context/AuthContext', () => ({ useAuth: () => ({ user: mocks.user })
 vi.mock('../api/movieApi', () => ({
   movieApi: { getGenres: mocks.getGenres }, recommendationApi: { getRecommendations: mocks.getRecommendations },
 }))
-const movie = { id: 4, title: 'Catalog film', type: 'MOVIE', releaseYear: 2020, description: 'Stored description', averageRating: 8, ratingIsMock: true, genres: [{ id: 1, name: 'Drama' }], recommendation: { reasons: ['Matches your Drama preferences'] } }
+const movie = { id: 4, title: 'Catalog film', type: 'MOVIE', releaseYear: 2020, description: 'Stored description', averageRating: 8, genres: [{ id: 1, name: 'Drama' }], recommendation: { reasons: ['Matches your Drama preferences'] } }
 const response = (overrides = {}) => ({ data: {
   items: [movie], pagination: { page: 1, limit: 12, total: 25, totalPages: 3 },
   meta: { mode: 'personalized', preferredGenres: ['Drama'] }, ...overrides,
@@ -35,7 +35,9 @@ describe('recommendations page', () => {
     const card = await screen.findByRole('link', { name: /Catalog film/ })
     expect(card.getAttribute('href')).toBe('/movies/4')
     expect(screen.getByText('Matches your Drama preferences')).toBeTruthy()
-    expect(screen.getByText(/Demo score \(mock\)/)).toBeTruthy()
+    expect(screen.getByText('8.0/10 · Rating')).toBeTruthy()
+    expect(screen.queryByText('Why this pick')).toBeNull()
+    expect(screen.getByRole('list', { name: 'Recommendation reasons' }).parentElement.className).toContain('text-[#9a6450]')
     expect(screen.getByRole('link', { name: 'Edit genre preferences' }).getAttribute('href')).toBe('/profile')
   })
   it('supports cold start without requiring ratings or watch history', async () => {
