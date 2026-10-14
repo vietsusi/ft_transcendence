@@ -5,57 +5,63 @@ import { api } from '../context/AuthContext'
 function Movies() {
   const [searchTerm, setSearchTerm] = useState('')
   const [movies, setMovies] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
 
+  const [query, setQuery] = useState('')
+  const [genre, setGenre] = useState('')
+  const [type, setType] = useState('')
+  const [genres, setGenres] = useState([])
+  const [error, setError] = useState('')
+  const [retry, setRetry] = useState(0)
+
   useEffect(() => {
-    fetchMovies(1)
+    const controller = new AbortController()
+    api.get('/genres', { signal: controller.signal })
+      .then(response => { if (!controller.signal.aborted) setGenres(response.data) })
+      .catch(() => {})
+    return () => controller.abort()
   }, [])
 
-  const fetchMovies = async (pageNum = 1) => {
+  useEffect(() => {
+    const controller = new AbortController()
     setLoading(true)
-    try {
-      const response = await api.get(`/movies/search?page=${pageNum}&limit=12`)
-      if (pageNum === 1) {
-        setMovies(response.data.items)
-      } else {
-        setMovies(prev => [...prev, ...response.data.items])
-      }
+    setError('')
+    api.get('/movies/search', {
+      params: { search: query || undefined, genre: genre || undefined, type: type || undefined, page, limit: 12 },
+      signal: controller.signal,
+    }).then(response => {
+      if (controller.signal.aborted) return
+      setMovies(previous => page === 1 ? response.data.items : [...previous, ...response.data.items])
       setTotalPages(response.data.pagination.totalPages)
-      setPage(pageNum)
-    } catch (error) {
-      console.error('Error fetching movies:', error)
-    } finally {
-      setLoading(false)
-    }
+    }).catch(() => {
+      if (!controller.signal.aborted) setError('Unable to load catalog. Please try again.')
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoading(false)
+    })
+    return () => controller.abort()
+  }, [query, genre, type, page, retry])
+
+  const resetResults = () => {
+    setMovies([])
+    setPage(1)
+    setTotalPages(1)
   }
 
-const handleSearch = async (e) => {
-    e.preventDefault()
-    if (!searchTerm.trim()) {
-      fetchMovies(1)
-      return
-    }
-    setLoading(true)
-    try {
-      const response = await api.get(`/movies/search?search=${searchTerm}&limit=24`)
-      const results = response.data.items || []
-      const sorted = results.sort((a, b) => {
-        const aTitle = a.title.toLowerCase().includes(searchTerm.toLowerCase())
-        const bTitle = b.title.toLowerCase().includes(searchTerm.toLowerCase())
-        if (aTitle && !bTitle) return -1
-        if (!aTitle && bTitle) return 1
-        return b.averageRating - a.averageRating
-      })
-      setMovies(sorted)
-      setTotalPages(1)
-    } catch (error) {
-      console.error('Error searching movies:', error)
-    } finally {
-      setLoading(false)
-    }
+  const handleSearch = (event) => {
+    event.preventDefault()
+    resetResults()
+    setQuery(searchTerm.trim())
+    setRetry(value => value + 1)
   }
+
+  const rankedMovies = query ? [...movies].sort((a, b) => {
+    const aTitle = a.title.toLowerCase().includes(query.toLowerCase())
+    const bTitle = b.title.toLowerCase().includes(query.toLowerCase())
+    if (aTitle !== bTitle) return aTitle ? -1 : 1
+    return b.averageRating - a.averageRating
+  }) : movies
 
   return (
     <div className="min-h-screen py-8">
@@ -67,10 +73,11 @@ const handleSearch = async (e) => {
       <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-8">
         <div className="flex gap-3">
           <input
+            aria-label="Search movies"
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search for movies, TV shows, genres..."
+            placeholder="Search title or description"
             className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition"
           />
           <button
@@ -81,7 +88,18 @@ const handleSearch = async (e) => {
             {loading ? '...' : 'Search'}
           </button>
         </div>
+        <div className="flex flex-wrap gap-3 mt-3">
+          <select aria-label="Genre" value={genre} onChange={event => { resetResults(); setGenre(event.target.value) }} className="border rounded-lg p-2">
+            <option value="">All genres</option>
+            {genres.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}
+          </select>
+          <select aria-label="Format" value={type} onChange={event => { resetResults(); setType(event.target.value) }} className="border rounded-lg p-2">
+            <option value="">All formats</option><option value="MOVIE">Movies</option><option value="TV_SERIES">TV series</option>
+          </select>
+        </div>
       </form>
+
+      {error && <div role="alert" className="text-center mb-6">{error} <button onClick={() => setRetry(value => value + 1)} className="text-blue-700">Try again</button></div>}
 
       {loading && page === 1 && (
         <div className="text-center py-12">
@@ -89,7 +107,7 @@ const handleSearch = async (e) => {
         </div>
       )}
 
-      {!loading && movies.length === 0 && (
+      {!loading && !error && movies.length === 0 && (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">🎥</div>
           <h3 className="text-xl font-semibold text-gray-700">No movies found</h3>
@@ -98,7 +116,7 @@ const handleSearch = async (e) => {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {movies.map((movie) => (
+        {rankedMovies.map((movie) => (
           <Link
             key={movie.id}
             to={`/movies/${movie.id}`}
@@ -118,7 +136,7 @@ const handleSearch = async (e) => {
                 <span className="text-gray-300">|</span>
                 <span className="flex items-center gap-1">
                   <span>⭐</span>
-                  <span>{movie.averageRating}</span>
+                  <span>{Number(movie.averageRating).toFixed(1)}/10 · Rating</span>
                 </span>
               </div>
               <div className="flex flex-wrap gap-1 mt-2">
@@ -133,10 +151,10 @@ const handleSearch = async (e) => {
         ))}
       </div>
 
-      {page < totalPages && (
+      {!error && page < totalPages && (
         <div className="text-center mt-8">
           <button
-            onClick={() => fetchMovies(page + 1)}
+            onClick={() => setPage(value => value + 1)}
             disabled={loading}
             className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
           >

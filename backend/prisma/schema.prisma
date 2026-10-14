@@ -29,6 +29,8 @@ model Genre {
 }
 
 model Movie {
+  sourceId      String?   @unique
+  sourceUrl     String?
   id            Int       @id @default(autoincrement())
   title         String
   description   String

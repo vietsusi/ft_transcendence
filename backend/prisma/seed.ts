@@ -1,4 +1,5 @@
 import { MovieType, PrismaClient } from '@prisma/client';
+import { importCatalog } from './import-catalog';
 
 const prisma = new PrismaClient();
 
@@ -408,6 +409,7 @@ async function main() {
   console.log(
     `Seed complete: ${genreNames.length} genres, ${movies.length} movies/series. Source: ${apiKey ? 'TMDB' : 'fallback seed'}.`,
   );
+  await importCatalog(prisma);
 }
 
 main()

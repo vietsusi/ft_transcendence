@@ -1,4 +1,4 @@
-import React, { useState } from 'react' 
+import React, { lazy, Suspense, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Home from './pages/Home'
@@ -13,6 +13,7 @@ import Watchlist from './pages/Watchlist'            // ← Added: for future us
 import Dashboard from './pages/Dashboard'            // ← Added: for future use
 
 // import './App.css'
+const Chat = lazy(() => import('./pages/Chat'))
 
 function App() {
   const { user, login, register, logout, isAuthenticated, loading, error } = useAuth()
@@ -22,7 +23,6 @@ function App() {
   const handleLogin = async (email, password) => {
     try {
       const result = await login(email, password)
-      console.log('✅ Login successful:', result)
       setIsLoginOpen(false)
       return result
     } catch (error) {
@@ -36,7 +36,6 @@ function App() {
   const handleRegister = async (username, email, password) => {
     try {
       const result = await register(username, email, password)
-      console.log('✅ Registration successful:', result)
       setIsLoginOpen(false)
       return result
     } catch (error) {
@@ -95,6 +94,7 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<Home user={user} />} />
           <Route path="/movies" element={<Movies />} />
+          <Route path="/chat" element={<ProtectedRoute><Suspense fallback={<p role="status">Loading chat…</p>}><Chat /></Suspense></ProtectedRoute>} />
           <Route path="/movies/:id" element={<MovieDetails />} />  {/* ← ADD */}
           {/* Protected Routes - Only when logged in */}
           <Route path="/profile" element={
