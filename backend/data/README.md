@@ -6,7 +6,7 @@ Selection query: films (`wdt:P31 wd:Q11424`) with more than 40 sitelinks and a r
 
 Cleaning: normalize whitespace and Unicode; reject missing/entity-ID titles and invalid years; deduplicate source IDs; map fine-grained genres to application genres; preserve unknown genres as Other; upsert by source ID or title/year. Existing IDs and poster URLs are preserved. The original 24 hand-authored demo records remain available, including TV series.
 
-Catalog cards use text rather than requiring poster images. Descriptions are Wikidata metadata descriptions, not full plot summaries. Missing descriptions explicitly say unavailable. Re-running `prisma db seed` does not duplicate imported films.
+Catalog pages show poster images when available and a placeholder otherwise. Recommendation cards use text and do not require posters. Descriptions are Wikidata metadata descriptions, not full plot summaries. Missing descriptions explicitly say unavailable. Re-running `prisma db seed` does not duplicate imported films.
 
 ```sparql
 SELECT ?film ?filmLabel ?filmDescription ?date ?genreLabel WHERE {
@@ -19,4 +19,4 @@ SELECT ?film ?filmLabel ?filmDescription ?date ?genreLabel WHERE {
 }
 ```
 
-To refresh, run the same SPARQL selection against https://query.wikidata.org/sparql and normalize bindings into the checked-in snapshot shape before seeding. Normal startup uses the snapshot and requires no external dataset service.
+To refresh, run the same SPARQL selection against https://query.wikidata.org/sparql and normalize bindings into the checked-in snapshot shape before seeding. With `TMDB_API_KEY` blank, startup uses fallback demo records plus this snapshot and requires no external dataset service. A configured TMDB API read access token enables the TMDB seed before the snapshot import.

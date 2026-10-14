@@ -18,7 +18,12 @@ export class MoviesService {
       this.prisma.movie.findMany({
         where,
         include: { genres: true },
-        orderBy: { [query.sortBy ?? 'createdAt']: query.sortOrder ?? 'desc' },
+        orderBy: query.search
+          ? [
+              { title: 'asc' },
+              { averageRating: 'desc' },
+            ]
+          : [{ [query.sortBy ?? 'createdAt']: query.sortOrder ?? 'desc' }],
         skip: (page - 1) * limit,
         take: limit,
       }),

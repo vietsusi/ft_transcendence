@@ -1,26 +1,381 @@
-import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { api } from '../context/AuthContext'
-export default function MovieDetails() {
+import React, { useState, useEffect } from 'react'
+import { Link, useParams, useNavigate } from 'react-router-dom'
+import { useAuth, api } from '../context/AuthContext'
+
+const getWatchlistStorageKey = (user) => `watchlist:${user?.id ?? user?.email ?? 'guest'}`
+const getRatingsStorageKey = (user) => `ratings:${user?.id ?? user?.email ?? 'guest'}`
+const getReviewsStorageKey = (user) => `reviews:${user?.id ?? user?.email ?? 'guest'}`
+const getActivityStorageKey = (user) => `activity:${user?.id ?? user?.email ?? 'guest'}`
+
+const readStoredJson = (key) => {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : []
+  } catch (error) {
+    console.error('Failed to read stored data from localStorage:', error)
+    return []
+  }
+}
+
+const writeStoredJson = (key, items) => {
+  localStorage.setItem(key, JSON.stringify(items))
+}
+
+const appendActivityEntry = (user, entry) => {
+  if (!user) return
+
+  const key = getActivityStorageKey(user)
+  const current = readStoredJson(key)
+  const next = [
+    entry,
+    ...current.filter(item => !(item.movieId === entry.movieId && item.type === entry.type)),
+  ]
+
+  writeStoredJson(key, next)
+}
+
+const readStoredWatchlist = (user) => {
+  if (!user) return []
+  return readStoredJson(getWatchlistStorageKey(user))
+}
+
+const writeStoredWatchlist = (user, items) => {
+  if (!user) return
+  writeStoredJson(getWatchlistStorageKey(user), items)
+}
+
+function MovieDetails() {
   const { id } = useParams()
-  const [movie, setMovie] = useState(null), [error, setError] = useState('')
+  const navigate = useNavigate()
+  const { user, isAuthenticated } = useAuth()
+  const [movie, setMovie] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [rating, setRating] = useState(0)
+  const [review, setReview] = useState('')
+  const [watchlistStatus, setWatchlistStatus] = useState('')
+  const [showReviewForm, setShowReviewForm] = useState(false)
+
   useEffect(() => {
     const controller = new AbortController()
-    setMovie(null); setError('')
-    api.get(`/movies/${id}`, { signal: controller.signal }).then(r => setMovie(r.data)).catch(e => { if (!controller.signal.aborted) setError(e.response?.status === 404 ? 'This movie is not in our catalog.' : 'Unable to load movie details.') })
+    const fetchMovie = async () => {
+      setLoading(true)
+      setMovie(null)
+      setError('')
+      setWatchlistStatus('')
+      setRating(0)
+      setReview('')
+      setShowReviewForm(false)
+      try {
+        const response = await api.get(`/movies/${id}`, { signal: controller.signal })
+        if (controller.signal.aborted) return
+        const fetchedMovie = response.data
+        const nextMovie = {
+          ...fetchedMovie,
+          poster: fetchedMovie.posterUrl,
+          rating: fetchedMovie.averageRating,
+          type: fetchedMovie.type || 'MOVIE',
+          genres: fetchedMovie.genres?.map(genre => typeof genre === 'string' ? genre : genre.name) || [],
+        }
+
+        setMovie(nextMovie)
+
+        if (user) {
+          const storedWatchlist = readStoredWatchlist(user)
+          const current = storedWatchlist.find(item => item.movieId === Number(id))
+          setWatchlistStatus(current?.status || '')
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setError(error.response?.status === 404
+            ? 'This movie is not in our catalog.'
+            : 'Unable to load movie details.')
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
+    fetchMovie()
     return () => controller.abort()
-  }, [id])
-  if (error) return <div role="alert">{error} <Link to="/movies" className="text-blue-700">Back to catalog</Link></div>
-  if (!movie) return <p role="status">Loading movie…</p>
-  return <article className="max-w-3xl mx-auto bg-white border rounded-2xl p-8">
-    <Link to="/movies" className="text-blue-700">← Catalog</Link>
-    <p className="text-slate-500 mt-8">{movie.type === 'TV_SERIES' ? 'TV series' : 'Movie'} · {movie.releaseYear}</p>
-    <h1 className="text-4xl font-bold mt-2">{movie.title}</h1>
-    <div className="flex flex-wrap gap-2 my-5">{movie.genres.map(g => <span key={g.id} className="rounded-full bg-blue-50 text-blue-800 px-3 py-1 text-sm">{g.name}</span>)}</div>
-    <p className="leading-7 text-slate-700">{movie.description}</p>
-    <p className="my-6">{movie.averageRating.toFixed(1)}/10 <span className="text-slate-500 text-sm">Rating</span></p>
-    {movie.sourceUrl && <a className="text-blue-700 text-sm" href={movie.sourceUrl} target="_blank" rel="noreferrer">Metadata source: Wikidata (CC0) ↗</a>}
-    <p className="text-sm text-slate-500 mt-4">Only stored metadata is shown. Full plot, cast and streaming availability may be unavailable.</p>
-    <Link to={`/chat?movie=${movie.id}`} className="inline-block bg-blue-600 text-white rounded-lg px-5 py-3 mt-6">Find similar titles in chat</Link>
-  </article>
+  }, [id, user])
+
+  const handleAddToWatchlist = (status) => {
+    if (!isAuthenticated || !user || !movie) {
+      return
+    }
+
+    const nextItems = readStoredWatchlist(user)
+    const movieId = Number(movie.id)
+    const filteredItems = nextItems.filter(item => item.movieId !== movieId)
+    const updatedItems = [
+      ...filteredItems,
+      {
+        movieId,
+        title: movie.title,
+        status,
+        posterUrl: movie.poster || movie.posterUrl || null,
+        updatedAt: new Date().toISOString(),
+      },
+    ]
+
+    const watchlistLabelMap = {
+      'want-to-watch': 'Want to Watch',
+      'watching': 'Currently Watching',
+      'watched': 'Watched',
+    }
+
+    const activityEntry = {
+      type: status,
+      title: movie.title,
+      label: watchlistLabelMap[status] || status,
+      updatedAt: new Date().toISOString(),
+      movieId,
+    }
+
+    appendActivityEntry(user, activityEntry)
+    writeStoredWatchlist(user, updatedItems)
+    setWatchlistStatus(status)
+  }
+
+  const handleSubmitRating = () => {
+    if (!user || !movie) return
+
+    const movieId = Number(movie.id)
+    const ratings = readStoredJson(getRatingsStorageKey(user))
+    const reviews = readStoredJson(getReviewsStorageKey(user))
+
+    const nextRatings = [
+      ...ratings.filter(item => item.movieId !== movieId),
+      {
+        movieId,
+        title: movie.title,
+        posterUrl: movie.poster || movie.posterUrl || null,
+        rating,
+        updatedAt: new Date().toISOString(),
+      }
+    ]
+
+    const trimmedReview = review.trim()
+    const nextReviews = [
+      ...reviews.filter(item => item.movieId !== movieId),
+      ...(trimmedReview ? [{
+        movieId,
+        title: movie.title,
+        posterUrl: movie.poster || movie.posterUrl || null,
+        review: trimmedReview,
+        updatedAt: new Date().toISOString(),
+      }] : [])
+    ]
+
+    const reviewActivityEntry = {
+      type: 'reviewed',
+      title: movie.title,
+      label: 'Reviewed',
+      updatedAt: new Date().toISOString(),
+      movieId,
+    }
+
+    appendActivityEntry(user, reviewActivityEntry)
+
+    writeStoredJson(getRatingsStorageKey(user), nextRatings)
+    writeStoredJson(getReviewsStorageKey(user), nextReviews)
+    setShowReviewForm(false)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-3 text-gray-600">Loading movie details...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return <div role="alert">{error} <Link to="/movies" className="text-blue-700">Back to catalog</Link></div>
+  }
+
+  if (!movie) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🎬</div>
+          <h2 className="text-2xl font-bold text-gray-700">Movie not found</h2>
+          <p className="text-gray-500">The movie you're looking for doesn't exist.</p>
+          <button
+            onClick={() => navigate('/movies')}
+            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            Back to Movies
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen py-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate('/movies')}
+          className="mb-6 text-gray-600 hover:text-blue-600 transition flex items-center gap-2"
+        >
+          ← Back to Movies
+        </button>
+
+        {/* Movie Header */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="md:flex">
+            {/* Poster/Image */}
+            <div className="md:w-1/3 h-64 md:h-auto bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden">
+              {movie.poster ? (
+                <img src={movie.poster} alt={movie.title} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-8xl">🎥</span>
+              )}
+            </div>
+
+            {/* Movie Info */}
+            <div className="p-6 md:p-8 md:w-2/3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-800">{movie.title}</h1>
+                  <div className="flex items-center gap-3 text-sm text-gray-600 mt-1">
+                    <span>{movie.releaseYear}</span>
+                    <span className="text-gray-300">|</span>
+                    <span>{movie.type}</span>
+                    <span className="text-gray-300">|</span>
+                    <span className="flex items-center gap-1">
+                      <span>⭐</span>
+                      <span className="font-semibold">{Number(movie.rating).toFixed(1)}</span>
+                      <span className="text-gray-400">/ 10</span>
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {movie.genres.map((genre) => (
+                    <span key={genre} className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">
+                      {genre}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <p className="text-gray-700 mt-4 leading-relaxed">
+                {movie.description}
+              </p>
+
+              {movie.director && (
+                <p className="text-sm text-gray-600 mt-2">
+                  <span className="font-semibold">Director:</span> {movie.director}
+                </p>
+              )}
+
+              {movie.cast && (
+                <p className="text-sm text-gray-600 mt-1">
+                  <span className="font-semibold">Cast:</span> {movie.cast.join(', ')}
+                </p>
+              )}
+
+              {movie.sourceUrl && (
+                <a className="inline-block text-blue-700 text-sm mt-4" href={movie.sourceUrl} target="_blank" rel="noreferrer">
+                  Metadata source: Wikidata (CC0) ↗
+                </a>
+              )}
+              <p className="text-sm text-gray-500 mt-4">Only stored metadata is shown. Full plot, cast and streaming availability may be unavailable.</p>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-3 mt-6">
+                <Link to={`/chat?movie=${movie.id}`} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                  Find similar titles in chat
+                </Link>
+                {isAuthenticated ? (
+                  <>
+                    <select
+                      value={watchlistStatus}
+                      onChange={(e) => handleAddToWatchlist(e.target.value)}
+                      className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="">Add to Watchlist</option>
+                      <option value="want-to-watch">Want to Watch</option>
+                      <option value="watching">Currently Watching</option>
+                      <option value="watched">Watched</option>
+                    </select>
+
+                    <button
+                      onClick={() => setShowReviewForm(!showReviewForm)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                    >
+                      {showReviewForm ? 'Cancel Review' : 'Rate & Review'}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => navigate('/')}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  >
+                    Sign in to rate and add to watchlist
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Rating & Review Form */}
+        {showReviewForm && isAuthenticated && (
+          <div className="mt-6 bg-white rounded-2xl shadow-lg p-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Rate & Review</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Your Rating
+                </label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => setRating(num)}
+                      className={`w-10 h-10 rounded-full transition ${
+                        rating === num
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Your Review (Optional)
+                </label>
+                <textarea
+                  value={review}
+                  onChange={(e) => setReview(e.target.value)}
+                  placeholder="Share your thoughts about this movie..."
+                  rows={4}
+                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition"
+                />
+              </div>
+              <button
+                onClick={handleSubmitRating}
+                disabled={rating === 0}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+              >
+                Submit Rating
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
+
+export default MovieDetails

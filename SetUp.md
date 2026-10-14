@@ -23,7 +23,7 @@ Open the site, register or sign in, then select **Chat**. Movies and detail page
 
 ## Data
 
-The seed retains the original 24 demo records and upserts 80 cleaned Wikidata films, merging overlaps. See [dataset provenance](backend/data/README.md). Run `docker compose exec backend npx prisma db seed` to repeat import safely.
+With `TMDB_API_KEY` blank, the seed retains the original 24 demo records. When configured with a TMDB API read access token, it uses popular TMDB movies and TV series instead. Both paths then upsert 80 cleaned Wikidata films, merging overlaps by title/year. See [dataset provenance](backend/data/README.md). Run `docker compose exec backend npx prisma db seed` to repeat import safely.
 
 PostgreSQL data is stored in the project-scoped `db_data` named volume. `docker compose down` stops/removes project containers while keeping data. Do not use global Docker prune commands or `down -v` unless you explicitly intend to delete data.
 

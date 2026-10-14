@@ -127,12 +127,16 @@ function Profile() {
 
   // Handle genre preferences
   const handleGenreToggle = (genre) => {
-  setSelectedGenres(prev => {
-    const current = prev.length > 0 ? prev : (user?.preferredGenres || [])
-    return current.includes(genre)
-      ? current.filter(g => g !== genre)
-      : [...current, genre]
-  })
+    setSelectedGenres(prev => {
+      const current = prev && prev.length > 0 ? prev : (user?.preferredGenres || [])
+      return current.includes(genre)
+        ? current.filter(g => g !== genre)
+        : [...current, genre]
+    })
+  }
+
+  const handleResetPreferences = () => {
+    setSelectedGenres([...(user?.preferredGenres || [])])
   }
 
   const handleSavePreferences = async () => {
@@ -423,9 +427,8 @@ function Profile() {
                   {loading ? 'Saving...' : 'Save Preferences'}
                 </button>
                 <button
-                  onClick={() => {
-                    setSelectedGenres(user?.preferredGenres || [])
-                  }}
+                  type="button"
+                  onClick={handleResetPreferences}
                   className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
                 >
                   Reset
