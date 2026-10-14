@@ -28,6 +28,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/transcendence}
       JWT_SECRET: ${JWT_SECRET:-change_me_in_prod}
       API_KEY: ${API_KEY:-change_me_api_key}
+      TMDB_API_KEY: ${TMDB_API_KEY:-}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
     ports:
       - "5001:5000"

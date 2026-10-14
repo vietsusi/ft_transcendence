@@ -2,6 +2,25 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
+const getWatchlistStorageKey = (user) => `watchlist:${user?.id ?? user?.email ?? 'guest'}`
+
+const readStoredWatchlist = (user) => {
+  if (!user) return []
+
+  try {
+    const raw = localStorage.getItem(getWatchlistStorageKey(user))
+    return raw ? JSON.parse(raw) : []
+  } catch (error) {
+    console.error('Failed to read watchlist from localStorage:', error)
+    return []
+  }
+}
+
+const writeStoredWatchlist = (user, items) => {
+  if (!user) return
+  localStorage.setItem(getWatchlistStorageKey(user), JSON.stringify(items))
+}
+
 function Watchlist() {
   const { user } = useAuth()
   const [watchlist, setWatchlist] = useState([])
@@ -9,28 +28,26 @@ function Watchlist() {
   const [activeTab, setActiveTab] = useState('all')
 
   useEffect(() => {
-    // Fetch watchlist from API
     const fetchWatchlist = async () => {
       setLoading(true)
       try {
-        // Replace with actual API call
-        // const response = await api.get('/watchlist')
-        // setWatchlist(response.data)
-        
-        // Mock data
-        setWatchlist([
-          { id: 1, title: 'Viet Frontend Demo', status: 'want-to-watch', poster: null },
-          { id: 2, title: 'Trancendance Demo', status: 'watching', poster: null },
-          { id: 3, title: 'Another Film', status: 'watched', poster: null },
-        ])
+        if (!user) {
+          setWatchlist([])
+          return
+        }
+
+        const stored = readStoredWatchlist(user)
+        setWatchlist(stored)
       } catch (error) {
         console.error('Error fetching watchlist:', error)
+        setWatchlist([])
       } finally {
         setLoading(false)
       }
     }
+
     fetchWatchlist()
-  }, [])
+  }, [user])
 
   const statusLabels = {
     'want-to-watch': 'Want to Watch',
@@ -42,9 +59,10 @@ function Watchlist() {
     ? watchlist 
     : watchlist.filter(item => item.status === activeTab)
 
-  const removeFromWatchlist = (id) => {
-    setWatchlist(watchlist.filter(item => item.id !== id))
-    // API call to remove
+  const removeFromWatchlist = (movieId) => {
+    const nextWatchlist = watchlist.filter(item => item.movieId !== movieId)
+    setWatchlist(nextWatchlist)
+    writeStoredWatchlist(user, nextWatchlist)
   }
 
   if (!user) {
@@ -108,20 +126,24 @@ function Watchlist() {
         ) : (
           <div className="space-y-3">
             {filteredWatchlist.map((item) => (
-              <div key={item.id} className="bg-white rounded-lg shadow-md p-4 flex items-center justify-between hover:shadow-lg transition">
+              <div key={item.movieId} className="bg-white rounded-lg shadow-md p-4 flex items-center justify-between hover:shadow-lg transition">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded flex items-center justify-center">
-                    <span className="text-2xl">🎥</span>
+                  <div className="w-12 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded flex items-center justify-center overflow-hidden">
+                    {item.posterUrl ? (
+                      <img src={item.posterUrl} alt={item.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-2xl">🎥</span>
+                    )}
                   </div>
                   <div>
-                    <Link to={`/movies/${item.id}`} className="font-semibold text-gray-800 hover:text-blue-600 transition">
+                    <Link to={`/movies/${item.movieId}`} className="font-semibold text-gray-800 hover:text-blue-600 transition">
                       {item.title}
                     </Link>
                     <p className="text-sm text-gray-500">{statusLabels[item.status] || item.status}</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => removeFromWatchlist(item.id)}
+                  onClick={() => removeFromWatchlist(item.movieId)}
                   className="text-red-500 hover:text-red-700 transition"
                 >
                   Remove

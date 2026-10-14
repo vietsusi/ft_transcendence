@@ -1,6 +1,48 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth, api } from '../context/AuthContext'
+
+const getWatchlistStorageKey = (user) => `watchlist:${user?.id ?? user?.email ?? 'guest'}`
+const getRatingsStorageKey = (user) => `ratings:${user?.id ?? user?.email ?? 'guest'}`
+const getReviewsStorageKey = (user) => `reviews:${user?.id ?? user?.email ?? 'guest'}`
+const getActivityStorageKey = (user) => `activity:${user?.id ?? user?.email ?? 'guest'}`
+
+const readStoredJson = (key) => {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : []
+  } catch (error) {
+    console.error('Failed to read stored data from localStorage:', error)
+    return []
+  }
+}
+
+const writeStoredJson = (key, items) => {
+  localStorage.setItem(key, JSON.stringify(items))
+}
+
+const appendActivityEntry = (user, entry) => {
+  if (!user) return
+
+  const key = getActivityStorageKey(user)
+  const current = readStoredJson(key)
+  const next = [
+    entry,
+    ...current.filter(item => !(item.movieId === entry.movieId && item.type === entry.type)),
+  ]
+
+  writeStoredJson(key, next)
+}
+
+const readStoredWatchlist = (user) => {
+  if (!user) return []
+  return readStoredJson(getWatchlistStorageKey(user))
+}
+
+const writeStoredWatchlist = (user, items) => {
+  if (!user) return
+  writeStoredJson(getWatchlistStorageKey(user), items)
+}
 
 function MovieDetails() {
   const { id } = useParams()
@@ -17,83 +59,126 @@ function MovieDetails() {
     const fetchMovie = async () => {
       setLoading(true)
       try {
-        // TODO: Replace with actual API call
-        // const response = await api.get(`/movies/${id}`)
-        // setMovie(response.data)
-        
-        // Mock data based on ID
-        const mockMovies = {
-          1: {
-            id: 1,
-            title: 'Viet Frontend Demo',
-            type: 'Movie',
-            genres: ['Drama', 'Romance'],
-            description: 'A Vietnamese frontend developer discovers the power of React and builds amazing user interfaces.',
-            releaseYear: 2024,
-            poster: null,
-            rating: 9.2,
-            director: 'Viet Nguyen',
-            cast: ['Viet Nguyen', 'React Dev', 'Tailwind CSS']
-          },
-          2: {
-            id: 2,
-            title: 'Trancendance Demo',
-            type: 'Movie',
-            genres: ['Sci-Fi', 'Thriller'],
-            description: 'A team of developers creates a groundbreaking web application that transcends traditional boundaries.',
-            releaseYear: 2024,
-            poster: null,
-            rating: 8.9,
-            director: '42 School',
-            cast: ['Developer 1', 'Developer 2', 'Developer 3', 'Developer 4']
-          },
-          3: {
-            id: 3,
-            title: 'Another Film',
-            type: 'TV Series',
-            genres: ['Comedy', 'Adventure'],
-            description: 'A heartwarming story about friendship, coding, and building something amazing together.',
-            releaseYear: 2023,
-            poster: null,
-            rating: 7.8,
-            director: 'Jane Doe',
-            cast: ['John Smith', 'Sarah Johnson', 'Mike Williams']
-          }
+        const response = await api.get(`/movies/${id}`)
+        const fetchedMovie = response.data
+        const nextMovie = {
+          ...fetchedMovie,
+          poster: fetchedMovie.posterUrl,
+          rating: fetchedMovie.averageRating,
+          type: fetchedMovie.type || 'MOVIE',
+          genres: fetchedMovie.genres?.map(genre => typeof genre === 'string' ? genre : genre.name) || [],
         }
 
-        // Get movie by ID, or use a default if not found
-        const foundMovie = mockMovies[id] || {
-          id: parseInt(id),
+        setMovie(nextMovie)
+
+        if (user) {
+          const storedWatchlist = readStoredWatchlist(user)
+          const current = storedWatchlist.find(item => item.movieId === Number(id))
+          setWatchlistStatus(current?.status || '')
+        }
+      } catch (error) {
+        console.error('Error fetching movie:', error)
+        const fallbackMovie = {
+          id: Number(id),
           title: 'Unknown Movie',
-          type: 'Movie',
+          type: 'MOVIE',
           genres: ['Unknown'],
           description: 'Movie details not available.',
-          releaseYear: 2024,
+          releaseYear: new Date().getFullYear(),
           poster: null,
           rating: 0,
           director: 'Unknown',
-          cast: ['Unknown']
+          cast: ['Unknown'],
         }
-        
-        setMovie(foundMovie)
-      } catch (error) {
-        console.error('Error fetching movie:', error)
+        setMovie(fallbackMovie)
       } finally {
         setLoading(false)
       }
     }
+
     fetchMovie()
-  }, [id])
+  }, [id, user])
 
   const handleAddToWatchlist = (status) => {
+    if (!isAuthenticated || !user || !movie) {
+      return
+    }
+
+    const nextItems = readStoredWatchlist(user)
+    const movieId = Number(movie.id)
+    const filteredItems = nextItems.filter(item => item.movieId !== movieId)
+    const updatedItems = [
+      ...filteredItems,
+      {
+        movieId,
+        title: movie.title,
+        status,
+        posterUrl: movie.poster || movie.posterUrl || null,
+        updatedAt: new Date().toISOString(),
+      },
+    ]
+
+    const watchlistLabelMap = {
+      'want-to-watch': 'Want to Watch',
+      'watching': 'Currently Watching',
+      'watched': 'Watched',
+    }
+
+    const activityEntry = {
+      type: status,
+      title: movie.title,
+      label: watchlistLabelMap[status] || status,
+      updatedAt: new Date().toISOString(),
+      movieId,
+    }
+
+    appendActivityEntry(user, activityEntry)
+    writeStoredWatchlist(user, updatedItems)
     setWatchlistStatus(status)
-    // API call to add to watchlist
-    console.log(`Added to watchlist with status: ${status}`)
   }
 
   const handleSubmitRating = () => {
-    // API call to submit rating
-    console.log(`Rating: ${rating}, Review: ${review}`)
+    if (!user || !movie) return
+
+    const movieId = Number(movie.id)
+    const ratings = readStoredJson(getRatingsStorageKey(user))
+    const reviews = readStoredJson(getReviewsStorageKey(user))
+
+    const nextRatings = [
+      ...ratings.filter(item => item.movieId !== movieId),
+      {
+        movieId,
+        title: movie.title,
+        posterUrl: movie.poster || movie.posterUrl || null,
+        rating,
+        updatedAt: new Date().toISOString(),
+      }
+    ]
+
+    const trimmedReview = review.trim()
+    const nextReviews = [
+      ...reviews.filter(item => item.movieId !== movieId),
+      ...(trimmedReview ? [{
+        movieId,
+        title: movie.title,
+        posterUrl: movie.poster || movie.posterUrl || null,
+        review: trimmedReview,
+        updatedAt: new Date().toISOString(),
+      }] : [])
+    ]
+
+    const reviewActivityEntry = {
+      type: 'reviewed',
+      title: movie.title,
+      label: 'Reviewed',
+      updatedAt: new Date().toISOString(),
+      movieId,
+    }
+
+    appendActivityEntry(user, reviewActivityEntry)
+
+    writeStoredJson(getRatingsStorageKey(user), nextRatings)
+    writeStoredJson(getReviewsStorageKey(user), nextReviews)
     setShowReviewForm(false)
   }
 
@@ -141,10 +226,14 @@ function MovieDetails() {
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="md:flex">
             {/* Poster/Image */}
-            <div className="md:w-1/3 h-64 md:h-auto bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-              <span className="text-8xl">🎥</span>
+            <div className="md:w-1/3 h-64 md:h-auto bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden">
+              {movie.poster ? (
+                <img src={movie.poster} alt={movie.title} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-8xl">🎥</span>
+              )}
             </div>
-            
+
             {/* Movie Info */}
             <div className="p-6 md:p-8 md:w-2/3">
               <div className="flex items-start justify-between">
