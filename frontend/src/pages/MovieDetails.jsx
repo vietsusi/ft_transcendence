@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useAuth, api } from '../context/AuthContext'
 
 const getWatchlistStorageKey = (user) => `watchlist:${user?.id ?? user?.email ?? 'guest'}`
@@ -50,16 +50,25 @@ function MovieDetails() {
   const { user, isAuthenticated } = useAuth()
   const [movie, setMovie] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [rating, setRating] = useState(0)
   const [review, setReview] = useState('')
   const [watchlistStatus, setWatchlistStatus] = useState('')
   const [showReviewForm, setShowReviewForm] = useState(false)
 
   useEffect(() => {
+    const controller = new AbortController()
     const fetchMovie = async () => {
       setLoading(true)
+      setMovie(null)
+      setError('')
+      setWatchlistStatus('')
+      setRating(0)
+      setReview('')
+      setShowReviewForm(false)
       try {
-        const response = await api.get(`/movies/${id}`)
+        const response = await api.get(`/movies/${id}`, { signal: controller.signal })
+        if (controller.signal.aborted) return
         const fetchedMovie = response.data
         const nextMovie = {
           ...fetchedMovie,
@@ -77,26 +86,18 @@ function MovieDetails() {
           setWatchlistStatus(current?.status || '')
         }
       } catch (error) {
-        console.error('Error fetching movie:', error)
-        const fallbackMovie = {
-          id: Number(id),
-          title: 'Unknown Movie',
-          type: 'MOVIE',
-          genres: ['Unknown'],
-          description: 'Movie details not available.',
-          releaseYear: new Date().getFullYear(),
-          poster: null,
-          rating: 0,
-          director: 'Unknown',
-          cast: ['Unknown'],
+        if (!controller.signal.aborted) {
+          setError(error.response?.status === 404
+            ? 'This movie is not in our catalog.'
+            : 'Unable to load movie details.')
         }
-        setMovie(fallbackMovie)
       } finally {
-        setLoading(false)
+        if (!controller.signal.aborted) setLoading(false)
       }
     }
 
     fetchMovie()
+    return () => controller.abort()
   }, [id, user])
 
   const handleAddToWatchlist = (status) => {
@@ -193,6 +194,10 @@ function MovieDetails() {
     )
   }
 
+  if (error) {
+    return <div role="alert">{error} <Link to="/movies" className="text-blue-700">Back to catalog</Link></div>
+  }
+
   if (!movie) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -200,7 +205,7 @@ function MovieDetails() {
           <div className="text-6xl mb-4">🎬</div>
           <h2 className="text-2xl font-bold text-gray-700">Movie not found</h2>
           <p className="text-gray-500">The movie you're looking for doesn't exist.</p>
-          <button 
+          <button
             onClick={() => navigate('/movies')}
             className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
@@ -215,7 +220,7 @@ function MovieDetails() {
     <div className="min-h-screen py-8">
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
-        <button 
+        <button
           onClick={() => navigate('/movies')}
           className="mb-6 text-gray-600 hover:text-blue-600 transition flex items-center gap-2"
         >
@@ -246,7 +251,7 @@ function MovieDetails() {
                     <span className="text-gray-300">|</span>
                     <span className="flex items-center gap-1">
                       <span>⭐</span>
-                      <span className="font-semibold">{movie.rating}</span>
+                      <span className="font-semibold">{Number(movie.rating).toFixed(1)}</span>
                       <span className="text-gray-400">/ 10</span>
                     </span>
                   </div>
@@ -276,8 +281,18 @@ function MovieDetails() {
                 </p>
               )}
 
+              {movie.sourceUrl && (
+                <a className="inline-block text-blue-700 text-sm mt-4" href={movie.sourceUrl} target="_blank" rel="noreferrer">
+                  Metadata source: Wikidata (CC0) ↗
+                </a>
+              )}
+              <p className="text-sm text-gray-500 mt-4">Only stored metadata is shown. Full plot, cast and streaming availability may be unavailable.</p>
+
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-3 mt-6">
+                <Link to={`/chat?movie=${movie.id}`} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                  Find similar titles in chat
+                </Link>
                 {isAuthenticated ? (
                   <>
                     <select
@@ -326,8 +341,8 @@ function MovieDetails() {
                       key={num}
                       onClick={() => setRating(num)}
                       className={`w-10 h-10 rounded-full transition ${
-                        rating === num 
-                          ? 'bg-blue-600 text-white' 
+                        rating === num
+                          ? 'bg-blue-600 text-white'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >

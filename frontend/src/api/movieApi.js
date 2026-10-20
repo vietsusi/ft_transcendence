@@ -11,7 +11,7 @@ export const movieApi = {
   searchMovies: (query) => api.get('/movies/search', { params: query }),
   
   // Get genres
-  getGenres: () => api.get('/genres'),
+  getGenres: (config) => api.get('/genres', config),
 }
 
 export const userApi = {
@@ -42,7 +42,7 @@ export const userApi = {
 
 export const recommendationApi = {
   // Get recommendations
-  getRecommendations: () => api.get('/recommendations'),
+  getRecommendations: (params, config = {}) => api.get('/recommendations', { ...config, params }),
   
   // Get analytics
   getAnalytics: () => api.get('/analytics'),

@@ -26,6 +26,7 @@ async function bootstrap() {
     .setTitle('ft_transcendence Movie API')
     .setDescription('Public API for movies, TV series and genres')
     .setVersion('1.0')
+    .addBearerAuth()
     .addApiKey(
       { type: 'apiKey', name: 'x-api-key', in: 'header' },
       'api-key',
