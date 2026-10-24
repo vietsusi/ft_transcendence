@@ -40,7 +40,7 @@ services:
       - ./backend:/app
       - /app/node_modules
       - ./backend/uploads:/app/uploads
-    command: sh -c "npm ci --no-audit --no-fund && npx prisma generate && npx prisma migrate deploy && npx prisma db seed && npm run start:dev"
+    command: sh -c "npm install --no-audit --no-fund && npx prisma generate && npx prisma migrate deploy && npx prisma db seed && npm run start:dev"
 
   # Frontend service
   frontend:
@@ -49,15 +49,15 @@ services:
     depends_on:
       - backend
     ports:
-     - "5173:5173"
+      - "5173:5173"
     environment:
-     - VITE_API_URL=http://localhost:5001/api
+      - VITE_API_URL=http://localhost:5001/api
     volumes:
-     - ./frontend:/app
-     - /app/node_modules
+      - ./frontend:/app
+      - /app/node_modules
     stdin_open: true
     tty: true
-    command: sh -c "npm ci --no-audit --no-fund && npm run dev -- --host 0.0.0.0"
+    command: sh -c "npm install --no-audit --no-fund && npm run dev -- --host 0.0.0.0"
 
 volumes:
   db_data:
